@@ -1,7 +1,36 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\TeacherDashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('home');
+Route::view('/', 'general.home')->name('home');
+
+Route::prefix('auth')->name('auth.')->group(function () {
+    Route::view('/login', 'auth.login')->name('login');
+    Route::view('/register', 'auth.register')->name('register');
+    Route::view('/password/reset', 'auth.reset_pass')->name('password.reset');
+    Route::view('/password/new', 'auth.new_pass')->name('password.new');
+});
+
+Route::prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::resource('admin', AdminDashboardController::class)->only(['index'])->names('admin');
+    Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');
+    Route::resource('student', StudentDashboardController::class)->only(['index'])->names('student');
+});
+
+Route::prefix('legal')->name('legal.')->group(function () {
+    Route::view('/cookies', 'legal.cookies')->name('cookies');
+    Route::view('/privacy', 'legal.privacy')->name('privacy');
+    Route::view('/terms', 'legal.terms')->name('terms');
+});
+
+Route::name('errors.')->group(function () {
+    Route::get('/403', fn () => response()->view('errors.403', [], 403))->name('forbidden');
+    Route::get('/404', fn () => response()->view('errors.404', [], 404))->name('not-found');
+});
+
+Route::fallback(function () {
+    return response()->view('utils.fallback', [], 404);
 });
