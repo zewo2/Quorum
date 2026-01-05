@@ -5,14 +5,9 @@ use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'general.home')->name('home');
+Route::view('/home', 'general.home')->name('home');
 
-Route::prefix('auth')->name('auth.')->group(function () {
-    Route::view('/login', 'auth.login')->name('login');
-    Route::view('/register', 'auth.register')->name('register');
-    Route::view('/password/reset', 'auth.reset_pass')->name('password.reset');
-    Route::view('/password/new', 'auth.new_pass')->name('password.new');
-});
+Route::view('/', 'general.home')->name('home2');
 
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('admin', AdminDashboardController::class)->only(['index'])->names('admin');

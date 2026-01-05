@@ -82,8 +82,8 @@
         <a class="btn ghost" href="{{ route('dashboard.admin.index') }}">Admin</a>
         <a class="btn ghost" href="{{ route('dashboard.teacher.index') }}">Teacher</a>
         <a class="btn ghost" href="{{ route('dashboard.student.index') }}">Student</a>
-        <a class="btn ghost" href="{{ route('auth.login') }}">Login</a>
-        <a class="btn ghost" href="{{ route('auth.register') }}">Register</a>
+        <a class="btn ghost" href="{{ route('login') }}">Login</a>
+        <a class="btn ghost" href="{{ route('register') }}">Register</a>
         <a class="btn ghost" href="{{ route('legal.privacy') }}">Privacy</a>
     </nav>
 </header>

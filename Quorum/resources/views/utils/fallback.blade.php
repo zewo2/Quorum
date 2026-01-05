@@ -6,7 +6,7 @@
 	<div class="actions">
 		<a class="btn" href="{{ route('home') }}">Home</a>
 		<a class="btn" href="{{ route('dashboard.teacher.index') }}">Teacher dashboard</a>
-		<a class="btn ghost" href="{{ route('auth.login') }}">Login</a>
+		<a class="btn ghost" href="{{ route('login') }}">Login</a>
 	</div>
 	<div class="pill">Route: fallback (404)</div>
 @endsection
