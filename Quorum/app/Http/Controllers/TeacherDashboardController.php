@@ -8,4 +8,14 @@ class TeacherDashboardController extends Controller
     {
         return view('dashboards.teacher.index');
     }
+
+    public function classes()
+    {
+        return view('dashboards.teacher.classes');
+    }
+
+    public function attendance()
+    {
+        return view('dashboards.teacher.attendance');
+    }
 }

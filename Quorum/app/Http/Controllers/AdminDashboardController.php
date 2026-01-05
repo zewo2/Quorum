@@ -8,4 +8,14 @@ class AdminDashboardController extends Controller
     {
         return view('dashboards.admin.index');
     }
+
+    public function users()
+    {
+        return view('dashboards.admin.users');
+    }
+
+    public function courses()
+    {
+        return view('dashboards.admin.courses');
+    }
 }

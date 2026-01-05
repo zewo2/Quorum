@@ -8,4 +8,14 @@ class StudentDashboardController extends Controller
     {
         return view('dashboards.student.index');
     }
+
+    public function schedule()
+    {
+        return view('dashboards.student.schedule');
+    }
+
+    public function subjects()
+    {
+        return view('dashboards.student.subjects');
+    }
 }

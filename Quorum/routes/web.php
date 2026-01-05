@@ -16,8 +16,16 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('admin', AdminDashboardController::class)->only(['index'])->names('admin');
+    Route::get('/admin/users', [AdminDashboardController::class, 'users'])->name('admin.users');
+    Route::get('/admin/courses', [AdminDashboardController::class, 'courses'])->name('admin.courses');
+
     Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');
+    Route::get('/teacher/classes', [TeacherDashboardController::class, 'classes'])->name('teacher.classes');
+    Route::get('/teacher/attendance', [TeacherDashboardController::class, 'attendance'])->name('teacher.attendance');
+
     Route::resource('student', StudentDashboardController::class)->only(['index'])->names('student');
+    Route::get('/student/schedule', [StudentDashboardController::class, 'schedule'])->name('student.schedule');
+    Route::get('/student/subjects', [StudentDashboardController::class, 'subjects'])->name('student.subjects');
 });
 
 Route::prefix('legal')->name('legal.')->group(function () {
