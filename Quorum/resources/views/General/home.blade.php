@@ -10,7 +10,7 @@
             <h1 class="hero-title">Welcome to Quorum</h1>
             <p class="hero-subtitle">Your gateway to modern campus management and academic excellence</p>
             <div class="hero-actions">
-                <a href="{{ route('login') }}" class="btn btn-primary btn-lg">Access Portal</a>
+                <a href="{{ route('portal') }}" class="btn btn-primary btn-lg">Access Portal</a>
                 <a href="#about" class="btn btn-outline btn-lg">Learn More</a>
             </div>
         </div>

@@ -3,16 +3,36 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/home', 'general.home')->name('home');
 
 Route::view('/', 'general.home')->name('home2');
 
+// Role-aware portal redirection
+Route::get('/portal', function () {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+
+    $role = Auth::user()->role ?? 'student';
+    return match ($role) {
+        'admin' => redirect()->route('dashboard.admin.index'),
+        'teacher' => redirect()->route('dashboard.teacher.index'),
+        default => redirect()->route('dashboard.student.index'),
+    };
+})->name('portal');
+
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('admin', AdminDashboardController::class)->only(['index'])->names('admin');
-    Route::get('/admin/users', [AdminDashboardController::class, 'users'])->name('admin.users');
     Route::get('/admin/courses', [AdminDashboardController::class, 'courses'])->name('admin.courses');
+
+    // User Management CRUD
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::resource('users', UserController::class);
+    });
 
     Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');
     Route::get('/teacher/classes', [TeacherDashboardController::class, 'classes'])->name('teacher.classes');
