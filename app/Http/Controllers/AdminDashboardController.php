@@ -18,4 +18,9 @@ class AdminDashboardController extends Controller
     {
         return view('dashboards.admin.courses');
     }
+
+    public function timetables()
+    {
+        return view('dashboards.admin.timetables');
+    }
 }

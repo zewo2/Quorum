@@ -18,4 +18,14 @@ class StudentDashboardController extends Controller
     {
         return view('dashboards.student.subjects');
     }
+
+    public function grades()
+    {
+        return view('dashboards.student.grades');
+    }
+
+    public function exams()
+    {
+        return view('dashboards.student.exams');
+    }
 }

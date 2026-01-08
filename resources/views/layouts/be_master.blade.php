@@ -51,7 +51,7 @@
                             </svg>
                             <span>Courses</span>
                         </a>
-                        <a href="#" class="nav-item">
+                        <a href="{{ route('dashboard.admin.timetables') }}" class="nav-item {{ request()->routeIs('dashboard.admin.timetables') ? 'active' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -93,7 +93,7 @@
                             </svg>
                             <span>Attendance</span>
                         </a>
-                        <a href="#" class="nav-item">
+                        <a href="{{ route('dashboard.student.schedule') }}" class="nav-item {{ request()->routeIs('dashboard.student.schedule') ? 'active' : '' }}" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -128,7 +128,7 @@
                             </svg>
                             <span>Subjects</span>
                         </a>
-                        <a href="#" class="nav-item">
+                        <a href="{{ route('dashboard.student.grades') }}" class="nav-item {{ request()->routeIs('dashboard.student.grades') ? 'active' : '' }}" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -138,7 +138,7 @@
                             </svg>
                             <span>Grades</span>
                         </a>
-                        <a href="#" class="nav-item">
+                        <a href="{{ route('dashboard.student.exams') }}" class="nav-item {{ request()->routeIs('dashboard.student.exams') ? 'active' : '' }}" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
