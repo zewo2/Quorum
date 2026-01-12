@@ -8,108 +8,112 @@
     <div class="dashboard-card filters-card">
         <div class="filters-left">
             <label class="field">
-                <span>Week</span>
+                <span>Enrolled Courses</span>
                 <select>
-                    <option>Jan 6 - Jan 12, 2026</option>
-                    <option>Jan 13 - Jan 19, 2026</option>
+                    <option>All courses</option>
+                    <option>Active only</option>
                 </select>
             </label>
             <label class="field">
                 <span>View</span>
                 <select>
-                    <option>Compact</option>
                     <option>Detailed</option>
+                    <option>Compact</option>
                 </select>
             </label>
         </div>
         <div class="filters-actions">
-            <a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary">Subjects</a>
-            <button class="btn btn-primary">Export</button>
+            <a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary">My Subjects</a>
+            <a href="{{ route('dashboard.student.grades') }}" class="btn btn-secondary">My Grades</a>
         </div>
     </div>
 
     <div class="dashboard-card week-grid">
         <div class="card-header">
-            <h3>Week Overview</h3>
-            <span class="chip">5 classes</span>
+            <h3>Enrolled Courses</h3>
+            <span class="chip">{{ $enrolledCourses->count() }} courses</span>
         </div>
         <div class="week-table">
-            @php
-                $slots = [
-                    ['time' => '09:00', 'mon' => 'Web Dev (A-204)', 'tue' => '-', 'wed' => 'Web Dev (A-204)', 'thu' => '-', 'fri' => 'Data Ethics (B-101)'],
-                    ['time' => '11:00', 'mon' => 'Data Structures (B-101)', 'tue' => 'Database Systems (C-305)', 'wed' => '-', 'thu' => 'Database Systems (C-305)', 'fri' => '-'],
-                    ['time' => '14:00', 'mon' => '-', 'tue' => 'Linear Algebra (A-108)', 'wed' => '-', 'thu' => 'Advanced Programming (B-101)', 'fri' => '-'],
-                ];
-            @endphp
-
             <div class="week-row week-head">
-                <div class="slot">Time</div>
-                <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div>
+                <div class="slot">Course</div>
+                <div>Code</div><div>Department</div><div>Credits</div><div>Status</div><div>Grade</div>
             </div>
-            @foreach($slots as $slot)
+            @forelse($enrolledCourses as $enrollment)
                 <div class="week-row">
-                    <div class="slot">{{ $slot['time'] }}</div>
-                    @foreach(['mon','tue','wed','thu','fri'] as $day)
-                        <div class="cell {{ $slot[$day] === '-' ? 'empty' : '' }}">{{ $slot[$day] }}</div>
-                    @endforeach
+                    <div class="slot">{{ $enrollment->course->name }}</div>
+                    <div class="cell">{{ $enrollment->course->code ?? 'N/A' }}</div>
+                    <div class="cell">{{ $enrollment->course->department }}</div>
+                    <div class="cell">{{ $enrollment->course->credits }}</div>
+                    <div class="cell">
+                        <span style="background: {{ $enrollment->status === 'active' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(107, 114, 128, 0.12)' }}; color: {{ $enrollment->status === 'active' ? '#10b981' : '#6b7280' }}; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">{{ ucfirst($enrollment->status) }}</span>
+                    </div>
+                    <div class="cell" style="text-align: right;">
+                        @if($enrollment->grade)
+                            <strong>{{ $enrollment->grade }}/20</strong>
+                        @else
+                            <span style="color: var(--text-dark-secondary);">Pending</span>
+                        @endif
+                    </div>
                 </div>
-            @endforeach
+            @empty
+                <div style="padding: var(--spacing-lg); text-align: center; color: var(--text-dark-secondary); grid-column: 1 / -1;">
+                    No enrolled courses
+                </div>
+            @endforelse
         </div>
     </div>
 
     <div class="dashboard-grid detail-grid">
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Today</h3>
-                <span class="chip">January 8, 2026</span>
+                <h3>Course Details</h3>
+                <span class="chip">{{ now()->format('F d, Y') }}</span>
             </div>
             <div class="timeline">
+                @forelse($enrolledCourses->take(3) as $enrollment)
                 <div class="timeline-row">
-                    <div class="timeline-dot" style="border-color: #22c55e;"></div>
+                    <div class="timeline-dot" style="border-color: {{ $enrollment->grade ? ($enrollment->grade >= 17 ? '#10b981' : '#0ea5e9') : '#9ca3af' }};"></div>
                     <div>
-                        <p class="item-title">Web Development</p>
-                        <span class="item-sub">09:00 - 10:30 • Room A-204</span>
+                        <p class="item-title">{{ $enrollment->course->name }}</p>
+                        <span class="item-sub">{{ $enrollment->course->code ?? 'N/A' }} • {{ $enrollment->course->department }}</span>
                     </div>
-                    <span class="badge badge-success">Starts soon</span>
+                    @if($enrollment->grade)
+                        <span class="badge badge-success">{{ $enrollment->grade }}/20</span>
+                    @else
+                        <span class="badge badge-secondary">No grade</span>
+                    @endif
                 </div>
-                <div class="timeline-row">
-                    <div class="timeline-dot" style="border-color: #0ea5e9;"></div>
-                    <div>
-                        <p class="item-title">Database Systems</p>
-                        <span class="item-sub">11:00 - 12:30 • Lab C-305</span>
-                    </div>
-                    <span class="badge badge-secondary">Labs</span>
+                @empty
+                <div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+                    No enrolled courses
                 </div>
+                @endforelse
             </div>
         </div>
 
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Upcoming Deadlines</h3>
-                <a href="#" class="card-link">See all →</a>
+                <h3>Course Status Summary</h3>
+                <a href="{{ route('dashboard.student.subjects') }}" class="card-link">See all →</a>
             </div>
             <div class="tasks-list">
+                @forelse($enrolledCourses as $enrollment)
                 <div class="task-item">
                     <div>
-                        <p class="item-title">Project 2 submission</p>
-                        <span class="item-sub">Web Development • Due Jan 15</span>
+                        <p class="item-title">{{ $enrollment->course->name }}</p>
+                        <span class="item-sub">{{ $enrollment->course->credits }} credits • {{ ucfirst($enrollment->status) }}</span>
                     </div>
-                    <span class="badge badge-warning">7 days</span>
+                    @if($enrollment->grade)
+                        <span class="badge badge-success">{{ $enrollment->grade }}/20</span>
+                    @else
+                        <span class="badge badge-secondary">Pending</span>
+                    @endif
                 </div>
-                <div class="task-item">
-                    <div>
-                        <p class="item-title">Quiz: Normalization</p>
-                        <span class="item-sub">Database Systems • Due Jan 10</span>
-                    </div>
-                    <span class="badge badge-success">On track</span>
+                @empty
+                <div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+                    No enrolled courses
                 </div>
-                <div class="task-item">
-                    <div>
-                        <p class="item-title">Problem set #3</p>
-                        <span class="item-sub">Data Structures • Due Jan 17</span>
-                    </div>
-                    <span class="badge badge-secondary">In progress</span>
-                </div>
+                @endforelse
             </div>
         </div>
     </div>

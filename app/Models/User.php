@@ -72,6 +72,7 @@ class User extends Authenticatable
 
     /**
      * Student enrollments
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function enrollments()
     {

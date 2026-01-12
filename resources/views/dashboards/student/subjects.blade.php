@@ -7,107 +7,102 @@
 <div class="subjects-page">
     <div class="dashboard-card summary-card">
         <div>
-            <p class="stat-label">Current GPA (dummy)</p>
-            <p class="stat-value">3.6</p>
-            <span class="stat-meta">Based on hardcoded values</span>
+            <p class="stat-label">Current GPA</p>
+            <p class="stat-value">{{ $gpa }}</p>
+            <span class="stat-meta">Based on enrolled courses</span>
         </div>
-        <div class="badge badge-success">15.8 / 20</div>
+        <div class="badge badge-success">{{ $averageGrade }} / 20</div>
     </div>
 
     <div class="dashboard-card">
         <div class="card-header">
-            <h3>Enrolled Subjects</h3>
+            <h3>Enrolled Courses</h3>
             <a href="{{ route('dashboard.student.schedule') }}" class="card-link">View schedule →</a>
         </div>
 
         <div class="subjects-grid">
-            @php
-                $subjects = [
-                    ['title' => 'Web Development', 'code' => 'CS210', 'prof' => 'Laura Mendes', 'grade' => 18, 'progress' => 82, 'color' => '#22c55e'],
-                    ['title' => 'Data Structures', 'code' => 'CS220', 'prof' => 'Rui Costa', 'grade' => 17, 'progress' => 76, 'color' => '#0ea5e9'],
-                    ['title' => 'Database Systems', 'code' => 'CS330', 'prof' => 'Helena Duarte', 'grade' => 16, 'progress' => 64, 'color' => '#f59e0b'],
-                    ['title' => 'Data Ethics', 'code' => 'DS260', 'prof' => 'Andre Sousa', 'grade' => 15, 'progress' => 58, 'color' => '#a855f7'],
-                ];
-            @endphp
-
-            @foreach($subjects as $subject)
+            @forelse($enrolledCourses as $enrollment)
                 <div class="subject-card">
                     <div class="card-top">
                         <div>
-                            <p class="eyebrow">{{ $subject['code'] }}</p>
-                            <h4>{{ $subject['title'] }}</h4>
+                            <p class="eyebrow">{{ $enrollment->course->code ?? 'N/A' }}</p>
+                            <h4>{{ $enrollment->course->name }}</h4>
                         </div>
-                        <span class="grade-chip" style="border-color: {{ $subject['color'] }}; color: {{ $subject['color'] }};">{{ $subject['grade'] }}/20</span>
+                        @if($enrollment->grade)
+                            <span class="grade-chip" style="border-color: {{ $enrollment->grade >= 17 ? '#10b981' : '#0ea5e9' }}; color: {{ $enrollment->grade >= 17 ? '#10b981' : '#0ea5e9' }};">{{ $enrollment->grade }}/20</span>
+                        @else
+                            <span class="grade-chip" style="border-color: #94a3b8; color: #94a3b8;">No grade</span>
+                        @endif
                     </div>
-                    <p class="card-sub">Instructor: {{ $subject['prof'] }}</p>
+                    <p class="card-sub">{{ $enrollment->course->department }}</p>
                     <div class="progress">
-                        <div class="progress-bar" style="width: {{ $subject['progress'] }}%; background: {{ $subject['color'] }};"></div>
+                        <div class="progress-bar" style="width: {{ $enrollment->grade ? ($enrollment->grade / 20) * 100 : 0 }}%; background: {{ $enrollment->grade ? ($enrollment->grade >= 17 ? '#10b981' : '#0ea5e9') : '#9ca3af' }};"></div>
                     </div>
                     <div class="progress-meta">
-                        <span>{{ $subject['progress'] }}% complete</span>
-                        <a href="#" class="card-link">Open subject</a>
+                        <span>{{ $enrollment->status }}</span>
+                        <span style="color: var(--text-dark-secondary);">{{ $enrollment->course->credits }} credits</span>
                     </div>
                 </div>
-            @endforeach
+            @empty
+                <div style="grid-column: 1 / -1; padding: var(--spacing-lg); text-align: center; color: var(--text-dark-secondary);">
+                    No enrolled courses
+                </div>
+            @endforelse
         </div>
     </div>
 
     <div class="dashboard-grid detail-grid">
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Upcoming Assessments</h3>
-                <span class="chip">January</span>
+                <h3>Course Info</h3>
+                <span class="chip">{{ $enrolledCourses->count() }} courses</span>
             </div>
             <div class="list">
+                @forelse($enrolledCourses->take(3) as $enrollment)
                 <div class="list-row">
                     <div>
-                        <p class="item-title">Project 2 demo</p>
-                        <span class="item-sub">Web Development • Jan 15</span>
+                        <p class="item-title">{{ $enrollment->course->name }}</p>
+                        <span class="item-sub">{{ $enrollment->course->department }} • {{ $enrollment->status }}</span>
                     </div>
-                    <span class="badge badge-warning">7 days</span>
+                    @if($enrollment->grade)
+                        <span class="badge badge-success">{{ $enrollment->grade }}/20</span>
+                    @else
+                        <span class="badge badge-secondary">No grade</span>
+                    @endif
                 </div>
-                <div class="list-row">
-                    <div>
-                        <p class="item-title">Quiz: Trees & Graphs</p>
-                        <span class="item-sub">Data Structures • Jan 12</span>
-                    </div>
-                    <span class="badge badge-secondary">Prep</span>
+                @empty
+                <div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+                    No enrolled courses
                 </div>
-                <div class="list-row">
-                    <div>
-                        <p class="item-title">Normalization lab</p>
-                        <span class="item-sub">Database Systems • Jan 10</span>
-                    </div>
-                    <span class="badge badge-success">Ready</span>
-                </div>
+                @endforelse
             </div>
         </div>
 
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Resources</h3>
-                <a href="#" class="card-link">All files →</a>
+                <h3>Academic Summary</h3>
+                <a href="{{ route('dashboard.student.grades') }}" class="card-link">View details →</a>
             </div>
             <div class="resource-grid">
                 <div class="resource-card">
-                    <div class="resource-icon">📄</div>
+                    <div class="resource-icon">📚</div>
                     <div>
-                        <p class="item-title">Syllabus pack</p>
-                        <span class="item-sub">All subjects • PDF</span>
+                        <p class="item-title">{{ $enrolledCourses->count() }}</p>
+                        <span class="item-sub">Enrolled courses</span>
                     </div>
                 </div>
                 <div class="resource-card">
-                    <div class="resource-icon">🎥</div>
+                    <div class="resource-icon">⭐</div>
                     <div>
-                        <p class="item-title">Lecture recordings</p>
-                        <span class="item-sub">Web Dev • Week 1-4</span>
+                        <p class="item-title">{{ $gpa }}</p>
+                        <span class="item-sub">Current GPA</span>
                     </div>
                 </div>
                 <div class="resource-card">
-                    <div class="resource-icon">🧭</div>
+                    <div class="resource-icon">📊</div>
                     <div>
-                        <p class="item-title">Study roadmap</p>
-                        <span class="item-sub">Data Structures</span>
+                        <p class="item-title">{{ $averageGrade }}</p>
+                        <span class="item-sub">Average grade</span>
                     </div>
                 </div>
             </div>

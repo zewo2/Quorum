@@ -10,150 +10,134 @@
 			<label class="field">
 				<span>Filter by Status</span>
 				<select>
-					<option>All Exams</option>
-					<option>Upcoming</option>
-					<option>In Progress</option>
+					<option>All Courses</option>
+					<option>Active</option>
 					<option>Completed</option>
 				</select>
 			</label>
 			<label class="field">
 				<span>Sort by</span>
 				<select>
-					<option>Date (Nearest)</option>
-					<option>Date (Latest)</option>
-					<option>Subject</option>
+					<option>Status</option>
+					<option>Course Name</option>
+					<option>Grade</option>
 				</select>
 			</label>
 		</div>
 		<div class="header-actions">
-			<button class="btn btn-secondary">Reset</button>
-			<button class="btn btn-primary">Add to Calendar</button>
+			<a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary">Back to Subjects</a>
 		</div>
 	</div>
 
 	<div class="exams-grid">
-		@php
-			$exams = [
-				['title' => 'Final Exam: Web Development', 'code' => 'CS210', 'date' => 'Jan 22, 2026', 'time' => '09:00 - 11:00', 'room' => 'A-101', 'weight' => 35, 'type' => 'upcoming', 'prep' => 92],
-				['title' => 'Midterm: Data Structures', 'code' => 'CS220', 'date' => 'Jan 15, 2026', 'time' => '14:00 - 16:00', 'room' => 'B-205', 'weight' => 30, 'type' => 'upcoming', 'prep' => 78],
-				['title' => 'Lab Exam: Database Systems', 'code' => 'CS330', 'date' => 'Jan 12, 2026', 'time' => '11:00 - 13:00', 'room' => 'Lab C-302', 'weight' => 40, 'type' => 'upcoming', 'prep' => 85],
-				['title' => 'Quiz: Linear Algebra', 'code' => 'MA210', 'date' => 'Jan 10, 2026', 'time' => '10:00 - 11:00', 'room' => 'A-305', 'weight' => 15, 'type' => 'upcoming', 'prep' => 72],
-				['title' => 'Practical Exam: Data Ethics', 'code' => 'DS260', 'date' => 'Dec 20, 2025', 'time' => '14:00 - 15:30', 'room' => 'B-101', 'weight' => 25, 'type' => 'completed', 'grade' => 17],
-				['title' => 'Midterm: Advanced Programming', 'code' => 'CS360', 'date' => 'Dec 18, 2025', 'time' => '09:00 - 11:00', 'room' => 'A-204', 'weight' => 35, 'type' => 'completed', 'grade' => 18],
-			];
-		@endphp
-
-		@foreach($exams as $exam)
-			<div class="exam-card exam-{{ $exam['type'] }}">
+		@forelse($enrolledCourses as $enrollment)
+			<div class="exam-card exam-{{ $enrollment->status }}">
 				<div class="card-header-exam">
 					<div>
-						<h4>{{ $exam['title'] }}</h4>
-						<span class="course-code">{{ $exam['code'] }}</span>
+						<h4>{{ $enrollment->course->name }}</h4>
+						<span class="course-code">{{ $enrollment->course->code ?? 'N/A' }}</span>
 					</div>
-					<span class="exam-badge exam-{{ $exam['type'] }}">
-						@if($exam['type'] === 'upcoming')
-							Upcoming
-						@else
-							Completed
-						@endif
+					<span class="exam-badge exam-{{ $enrollment->status }}">
+						{{ ucfirst($enrollment->status) }}
 					</span>
 				</div>
 
 				<div class="exam-details">
 					<div class="detail-row">
-						<span class="detail-icon">📅</span>
+						<span class="detail-icon">📚</span>
 						<div>
-							<span class="detail-label">Date</span>
-							<p class="detail-value">{{ $exam['date'] }}</p>
+							<span class="detail-label">Department</span>
+							<p class="detail-value">{{ $enrollment->course->department }}</p>
 						</div>
 					</div>
 					<div class="detail-row">
-						<span class="detail-icon">⏰</span>
+						<span class="detail-icon">📊</span>
 						<div>
-							<span class="detail-label">Time</span>
-							<p class="detail-value">{{ $exam['time'] }}</p>
+							<span class="detail-label">Credits</span>
+							<p class="detail-value">{{ $enrollment->course->credits }} credits</p>
 						</div>
 					</div>
 					<div class="detail-row">
-						<span class="detail-icon">📍</span>
+						<span class="detail-icon">✓</span>
 						<div>
-							<span class="detail-label">Location</span>
-							<p class="detail-value">{{ $exam['room'] }}</p>
+							<span class="detail-label">Status</span>
+							<p class="detail-value">{{ ucfirst($enrollment->status) }}</p>
 						</div>
 					</div>
 					<div class="detail-row">
-						<span class="detail-icon">⚖️</span>
+						<span class="detail-icon">📝</span>
 						<div>
-							<span class="detail-label">Weight</span>
-							<p class="detail-value">{{ $exam['weight'] }}% of grade</p>
+							<span class="detail-label">Description</span>
+							<p class="detail-value">{{ Str::limit($enrollment->course->description, 50) }}</p>
 						</div>
 					</div>
 				</div>
 
-				@if($exam['type'] === 'upcoming')
-					<div class="prep-section">
-						<div class="prep-header">
-							<span class="prep-label">Preparation</span>
-							<span class="prep-percent">{{ $exam['prep'] }}%</span>
+				@if($enrollment->grade)
+					<div class="result-section">
+						<div class="result-header">
+							<span>Grade</span>
+							<span class="grade-badge">{{ $enrollment->grade }}/20</span>
 						</div>
-						<div class="prep-bar">
-							<div class="prep-fill" style="width: {{ $exam['prep'] }}%;"></div>
-						</div>
-						<div class="prep-tips">
-							<a href="{{ route('dashboard.student.schedule') }}" class="action-link">Review schedule →</a>
-							<a href="#" class="action-link">Study materials →</a>
+						<div class="result-bar">
+							<div class="result-fill" style="width: {{ ($enrollment->grade / 20) * 100 }}%;"></div>
 						</div>
 					</div>
 				@else
-					<div class="result-section">
-						<div class="result-header">
-							<span>Result</span>
-							<span class="grade-badge">{{ $exam['grade'] }}/20</span>
+					<div class="prep-section">
+						<div class="prep-header">
+							<span class="prep-label">Status</span>
+							<span class="prep-percent">In Progress</span>
 						</div>
-						<div class="result-bar">
-							<div class="result-fill" style="width: {{ ($exam['grade'] / 20) * 100 }}%;"></div>
+						<div class="prep-tips">
+							<a href="{{ route('dashboard.student.schedule') }}" class="action-link">View schedule →</a>
+							<a href="{{ route('dashboard.student.subjects') }}" class="action-link">View subject →</a>
 						</div>
 					</div>
 				@endif
 
 				<div class="card-footer-exam">
-					<button class="btn btn-secondary btn-small">Details</button>
-					@if($exam['type'] === 'upcoming')
-						<button class="btn btn-primary btn-small">View Materials</button>
+					<a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary btn-small">Details</a>
+					@if($enrollment->grade)
+						<span class="btn btn-secondary btn-small" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none; cursor: default;">Graded</span>
 					@else
-						<button class="btn btn-secondary btn-small">View Results</button>
+						<span class="btn btn-secondary btn-small" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: none; cursor: default;">Pending</span>
 					@endif
 				</div>
 			</div>
-		@endforeach
+		@empty
+			<div style="padding: var(--spacing-lg); color: var(--text-dark-secondary); text-align: center; grid-column: 1 / -1;">
+				No enrolled courses
+			</div>
+		@endforelse
 	</div>
 
 	<div class="dashboard-card stats-section">
 		<div class="card-header">
-			<h3>Exam Statistics</h3>
-			<span class="chip">All Exams</span>
+			<h3>Summary</h3>
+			<span class="chip">All Courses</span>
 		</div>
 
 		<div class="stats-grid">
 			<div class="stat-box">
-				<p class="stat-label">Total Exams</p>
-				<p class="stat-value">6</p>
-				<span class="stat-meta">Completed & Upcoming</span>
+				<p class="stat-label">Total Courses</p>
+				<p class="stat-value">{{ $enrolledCourses->count() }}</p>
+				<span class="stat-meta">Enrolled courses</span>
 			</div>
 			<div class="stat-box">
-				<p class="stat-label">Average Grade</p>
-				<p class="stat-value">17.3</p>
+				<p class="stat-label">Graded</p>
+				<p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->grade !== null)->count() }}</p>
+				<span class="stat-meta">With grades</span>
+			</div>
+			<div class="stat-box">
+				<p class="stat-label">Pending</p>
+				<p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->grade === null)->count() }}</p>
+				<span class="stat-meta">Awaiting grades</span>
+			</div>
+			<div class="stat-box">
+				<p class="stat-label">Average</p>
+				<p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->grade !== null)->count() > 0 ? round($enrolledCourses->filter(fn($e) => $e->grade !== null)->avg('grade'), 1) : 'N/A' }}</p>
 				<span class="stat-meta">Out of 20</span>
-			</div>
-			<div class="stat-box">
-				<p class="stat-label">Completed</p>
-				<p class="stat-value">2</p>
-				<span class="stat-meta">Average: 17.5</span>
-			</div>
-			<div class="stat-box">
-				<p class="stat-label">Upcoming</p>
-				<p class="stat-value">4</p>
-				<span class="stat-meta">Starts in 4 days</span>
 			</div>
 		</div>
 	</div>

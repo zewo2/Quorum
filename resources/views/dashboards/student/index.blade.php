@@ -19,7 +19,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>Enrolled Courses</h3>
-			<p class="stat-value">6</p>
+			<p class="stat-value">{{ $courseCount }}</p>
 		</div>
 	</div>
 
@@ -35,7 +35,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>Average Grade</h3>
-			<p class="stat-value">15.8</p>
+			<p class="stat-value">{{ $averageGrade > 0 ? $averageGrade : 'N/A' }}</p>
 		</div>
 	</div>
 
@@ -49,68 +49,58 @@
 			</svg>
 		</div>
 		<div class="stat-content">
-			<h3>Upcoming Exams</h3>
-			<p class="stat-value">3</p>
+			<h3>Total Credits</h3>
+			<p class="stat-value">{{ $totalCredits }}</p>
 		</div>
 	</div>
 
 	<div class="dashboard-card card-full">
 		<div class="card-header">
 			<h3>Recent Grades</h3>
-			<a href="#" class="card-link">View all →</a>
+			<a href="{{ route('dashboard.student.grades') }}" class="card-link">View all →</a>
 		</div>
 		<div class="grades-list">
+			@forelse($enrolledCourses->filter(fn($e) => $e->grade !== null)->take(3) as $enrollment)
 			<div class="grade-item">
 				<div class="grade-info">
-					<h4>Data Structures</h4>
-					<span class="grade-date">December 15, 2025</span>
+					<h4>{{ $enrollment->course->name }}</h4>
+					<span class="grade-date">{{ $enrollment->created_at->format('F d, Y') }}</span>
 				</div>
-				<div class="grade-value grade-good">17</div>
+				<div class="grade-value {{ $enrollment->grade >= 17 ? 'grade-excellent' : 'grade-good' }}">{{ $enrollment->grade }}</div>
 			</div>
-			<div class="grade-item">
-				<div class="grade-info">
-					<h4>Web Development</h4>
-					<span class="grade-date">December 12, 2025</span>
-				</div>
-				<div class="grade-value grade-excellent">18</div>
+			@empty
+			<div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+				No grades yet
 			</div>
-			<div class="grade-item">
-				<div class="grade-info">
-					<h4>Database Systems</h4>
-					<span class="grade-date">December 8, 2025</span>
-				</div>
-				<div class="grade-value grade-good">16</div>
-			</div>
+			@endforelse
 		</div>
 	</div>
 
 	<div class="dashboard-card card-full">
 		<div class="card-header">
-			<h3>Today's Schedule</h3>
-			<a href="{{ route('dashboard.student.schedule') }}" class="card-link">Full schedule →</a>
+			<h3>My Courses</h3>
+			<a href="{{ route('dashboard.student.subjects') }}" class="card-link">View all subjects →</a>
 		</div>
 		<div class="schedule-list">
+			@forelse($enrolledCourses->take(3) as $enrollment)
 			<div class="schedule-item">
-				<div class="schedule-time">09:00 - 10:30</div>
 				<div class="schedule-details">
-					<h4>Web Development</h4>
-					<span class="schedule-room">Room A-204</span>
+					<h4>{{ $enrollment->course->name }}</h4>
+					<span class="schedule-room">{{ $enrollment->course->department }} • {{ $enrollment->status }}</span>
+				</div>
+				<div style="text-align: right;">
+					@if($enrollment->grade)
+						<div class="grade-value {{ $enrollment->grade >= 17 ? 'grade-excellent' : 'grade-good' }}" style="margin: 0;">{{ $enrollment->grade }}</div>
+					@else
+						<span style="color: var(--text-dark-secondary); font-size: 0.875rem;">No grade yet</span>
+					@endif
 				</div>
 			</div>
-			<div class="schedule-item">
-				<div class="schedule-time">11:00 - 12:30</div>
-				<div class="schedule-details">
-					<h4>Data Structures</h4>
-					<span class="schedule-room">Room B-101</span>
-				</div>
+			@empty
+			<div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+				No enrolled courses
 			</div>
-			<div class="schedule-item">
-				<div class="schedule-time">14:00 - 15:30</div>
-				<div class="schedule-details">
-					<h4>Database Systems</h4>
-					<span class="schedule-room">Lab C-305</span>
-				</div>
-			</div>
+			@endforelse
 		</div>
 	</div>
 

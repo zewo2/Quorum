@@ -7,146 +7,134 @@
 <div class="grades-page">
 	<div class="dashboard-card summary-card">
 		<div class="summary-item">
-			<p class="stat-label">Current GPA (dummy)</p>
-			<p class="stat-value">3.6</p>
-			<span class="stat-meta">Based on all assessments</span>
+			<p class="stat-label">Current GPA</p>
+			<p class="stat-value">{{ $gpa }}</p>
+			<span class="stat-meta">Based on all courses</span>
 		</div>
 		<div class="summary-item">
 			<p class="stat-label">Cumulative Average</p>
-			<p class="stat-value">15.8</p>
+			<p class="stat-value">{{ $averageGrade }}</p>
 			<span class="stat-meta">Out of 20</span>
 		</div>
 		<div class="summary-item">
-			<p class="stat-label">Grade Trend</p>
-			<p class="stat-value">↑ +0.3</p>
-			<span class="stat-meta">vs last month</span>
+			<p class="stat-label">Grade Range</p>
+			<p class="stat-value">{{ $highestGrade > 0 ? $lowestGrade . '-' . $highestGrade : 'N/A' }}</p>
+			<span class="stat-meta">Lowest to Highest</span>
 		</div>
 	</div>
 
 	<div class="dashboard-card">
 		<div class="card-header">
-			<h3>Grades by Subject</h3>
-			<select class="filter-select">
-				<option>All Time</option>
-				<option>This Semester</option>
-				<option>Last Month</option>
-			</select>
+			<h3>Grades by Course</h3>
 		</div>
 
 		<div class="grades-grid">
-			@php
-				$grades = [
-					['subject' => 'Web Development', 'code' => 'CS210', 'assessments' => [
-						['title' => 'Project 1: Landing Page', 'grade' => 19, 'weight' => 10],
-						['title' => 'Quiz: HTML/CSS', 'grade' => 18, 'weight' => 5],
-						['title' => 'Midterm Exam', 'grade' => 17, 'weight' => 35],
-					]],
-					['subject' => 'Data Structures', 'code' => 'CS220', 'assessments' => [
-						['title' => 'Problem Set 1', 'grade' => 17, 'weight' => 10],
-						['title' => 'Problem Set 2', 'grade' => 16, 'weight' => 10],
-						['title' => 'Lab Work', 'grade' => 18, 'weight' => 25],
-					]],
-					['subject' => 'Database Systems', 'code' => 'CS330', 'assessments' => [
-						['title' => 'Design Project', 'grade' => 16, 'weight' => 30],
-						['title' => 'Implementation', 'grade' => 16, 'weight' => 35],
-						['title' => 'Documentation', 'grade' => 17, 'weight' => 10],
-					]],
-				];
-			@endphp
-
-			@foreach($grades as $course)
+			@forelse($enrolledCourses as $enrollment)
 				<div class="subject-grades">
 					<div class="subject-header">
 						<div>
-							<h4>{{ $course['subject'] }}</h4>
-							<span class="course-code">{{ $course['code'] }}</span>
+							<h4>{{ $enrollment->course->name }}</h4>
+							<span class="course-code">{{ $enrollment->course->code ?? 'N/A' }}</span>
 						</div>
-						@php
-							$avgGrade = round(array_sum(array_column($course['assessments'], 'grade')) / count($course['assessments']), 1);
-						@endphp
-						<span class="grade-badge">{{ $avgGrade }}/20</span>
+						@if($enrollment->grade)
+							<span class="grade-badge">{{ $enrollment->grade }}/20</span>
+						@else
+							<span class="grade-badge" style="background: #6b7280;">No Grade</span>
+						@endif
 					</div>
 					<div class="assessments-list">
-						@foreach($course['assessments'] as $assessment)
-							<div class="assessment-row">
-								<div class="assessment-info">
-									<p class="assessment-title">{{ $assessment['title'] }}</p>
-									<span class="assessment-meta">Weight: {{ $assessment['weight'] }}%</span>
-								</div>
-								<div class="assessment-grade">
-									<span class="grade-value">{{ $assessment['grade'] }}/20</span>
-									<div class="grade-bar">
-										<div class="grade-fill" style="width: {{ ($assessment['grade'] / 20) * 100 }}%;"></div>
-									</div>
-								</div>
+						<div class="assessment-row">
+							<div class="assessment-info">
+								<p class="assessment-title">{{ $enrollment->course->name }}</p>
+								<span class="assessment-meta">Status: {{ $enrollment->status }}</span>
 							</div>
-						@endforeach
+							<div class="assessment-grade">
+								@if($enrollment->grade)
+									<span class="grade-value">{{ $enrollment->grade }}/20</span>
+									<div class="grade-bar">
+										<div class="grade-fill" style="width: {{ ($enrollment->grade / 20) * 100 }}%;"></div>
+									</div>
+								@else
+									<span class="grade-value" style="color: #9ca3af;">Pending</span>
+									<div class="grade-bar">
+										<div class="grade-fill" style="width: 0%;"></div>
+									</div>
+								@endif
+							</div>
+						</div>
+						<div class="assessment-row">
+							<div class="assessment-info">
+								<p class="assessment-title">Credits</p>
+								<span class="assessment-meta">{{ $enrollment->course->department }}</span>
+							</div>
+							<div class="assessment-grade">
+								<span class="grade-value">{{ $enrollment->course->credits }}</span>
+							</div>
+						</div>
 					</div>
 				</div>
-			@endforeach
+			@empty
+				<div style="grid-column: 1 / -1; padding: var(--spacing-lg); text-align: center; color: var(--text-dark-secondary);">
+					No enrolled courses with grades yet
+				</div>
+			@endforelse
 		</div>
 	</div>
 
 	<div class="dashboard-grid detail-grid">
 		<div class="dashboard-card">
 			<div class="card-header">
-				<h3>Grade Distribution</h3>
-				<span class="chip">This Semester</span>
+				<h3>Grade Statistics</h3>
+				<span class="chip">All Courses</span>
 			</div>
 			<div class="distribution">
 				<div class="dist-row">
-					<span class="dist-label">A+ (19-20)</span>
-					<div class="dist-bar"><div class="dist-fill" style="width: 20%;"></div></div>
-					<span class="dist-count">2</span>
+					<span class="dist-label">Average</span>
+					<div class="dist-bar"><div class="dist-fill" style="width: {{ $averageGrade > 0 ? ($averageGrade / 20) * 100 : 0 }}%;"></div></div>
+					<span class="dist-count">{{ $averageGrade }}</span>
 				</div>
 				<div class="dist-row">
-					<span class="dist-label">A (17-18)</span>
-					<div class="dist-bar"><div class="dist-fill" style="width: 40%;"></div></div>
-					<span class="dist-count">4</span>
+					<span class="dist-label">Highest</span>
+					<div class="dist-bar"><div class="dist-fill" style="width: {{ $highestGrade > 0 ? ($highestGrade / 20) * 100 : 0 }}%;"></div></div>
+					<span class="dist-count">{{ $highestGrade > 0 ? $highestGrade : 'N/A' }}</span>
 				</div>
 				<div class="dist-row">
-					<span class="dist-label">B+ (15-16)</span>
-					<div class="dist-bar"><div class="dist-fill" style="width: 35%;"></div></div>
-					<span class="dist-count">3</span>
+					<span class="dist-label">Lowest</span>
+					<div class="dist-bar"><div class="dist-fill" style="width: {{ $lowestGrade > 0 ? ($lowestGrade / 20) * 100 : 0 }}%;"></div></div>
+					<span class="dist-count">{{ $lowestGrade > 0 ? $lowestGrade : 'N/A' }}</span>
 				</div>
 				<div class="dist-row">
-					<span class="dist-label">B (13-14)</span>
-					<div class="dist-bar"><div class="dist-fill" style="width: 5%;"></div></div>
-					<span class="dist-count">1</span>
+					<span class="dist-label">GPA (4.0)</span>
+					<div class="dist-bar"><div class="dist-fill" style="width: {{ $gpa > 0 ? ($gpa / 4) * 100 : 0 }}%;"></div></div>
+					<span class="dist-count">{{ $gpa }}</span>
 				</div>
 			</div>
 		</div>
 
 		<div class="dashboard-card">
 			<div class="card-header">
-				<h3>Upcoming Assessments</h3>
-				<a href="{{ route('dashboard.student.schedule') }}" class="card-link">View schedule →</a>
+				<h3>Course Summary</h3>
+				<a href="{{ route('dashboard.student.subjects') }}" class="card-link">View subjects →</a>
 			</div>
 			<div class="upcoming-list">
+				@forelse($enrolledCourses as $enrollment)
 				<div class="upcoming-item">
-					<div class="pending-dot"></div>
+					<div class="pending-dot" style="background: {{ $enrollment->grade ? ($enrollment->grade >= 17 ? '#10b981' : '#0ea5e9') : '#9ca3af' }};"></div>
 					<div>
-						<p class="item-title">Final Exam: Web Development</p>
-						<span class="item-sub">CS210 • Jan 22 • Weight: 35%</span>
+						<p class="item-title">{{ $enrollment->course->name }}</p>
+						<span class="item-sub">{{ $enrollment->course->code ?? 'N/A' }} • {{ $enrollment->course->department }}</span>
 					</div>
-					<span class="badge badge-warning">14 days</span>
+					@if($enrollment->grade)
+						<span class="badge badge-success">{{ $enrollment->grade }}/20</span>
+					@else
+						<span class="badge badge-secondary">Pending</span>
+					@endif
 				</div>
-				<div class="upcoming-item">
-					<div class="pending-dot"></div>
-					<div>
-						<p class="item-title">Project 3: Database Design</p>
-						<span class="item-sub">CS330 • Jan 15 • Weight: 30%</span>
-					</div>
-					<span class="badge badge-secondary">7 days</span>
+				@empty
+				<div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+					No enrolled courses
 				</div>
-				<div class="upcoming-item">
-					<div class="pending-dot"></div>
-					<div>
-						<p class="item-title">Problem Set 3</p>
-						<span class="item-sub">CS220 • Jan 12 • Weight: 10%</span>
-					</div>
-					<span class="badge badge-success">4 days</span>
-				</div>
+				@endforelse
 			</div>
 		</div>
 	</div>
