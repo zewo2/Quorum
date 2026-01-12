@@ -70,6 +70,13 @@
                             </svg>
                             <span>Courses</span>
                         </a>
+                        <a href="{{ route('dashboard.admin.subjects.index') }}" class="nav-item {{ request()->routeIs('dashboard.admin.subjects*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            </svg>
+                            <span>Subjects</span>
+                        </a>
                         <a href="{{ route('dashboard.admin.timetables') }}" class="nav-item {{ request()->routeIs('dashboard.admin.timetables') ? 'active' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
