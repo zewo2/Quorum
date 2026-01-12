@@ -55,6 +55,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Send the password reset notification (queued to avoid request timeout).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify((new \App\Notifications\QueuedResetPassword($token))->onQueue('mail'));
+    }
+
+    /**
      * Get user activities
      */
     public function activities()
