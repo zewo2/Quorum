@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherSubjectController;
@@ -61,6 +62,15 @@ Route::prefix('legal')->name('legal.')->group(function () {
     Route::view('/cookies', 'legal.cookies')->name('cookies');
     Route::view('/privacy', 'legal.privacy')->name('privacy');
     Route::view('/terms', 'legal.terms')->name('terms');
+});
+
+// Public user profiles
+Route::prefix('profile')->name('profile.')->group(function () {
+    Route::get('/{user}', [ProfileController::class, 'show'])->name('show');
+    Route::middleware('auth')->group(function () {
+        Route::get('/{user}/edit', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/{user}', [ProfileController::class, 'update'])->name('update');
+    });
 });
 
 Route::name('errors.')->group(function () {
