@@ -50,6 +50,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'date_of_birth' => 'date',
+            'last_login' => 'datetime',
         ];
     }
 
@@ -104,5 +105,4 @@ class User extends Authenticatable
             ->withPivot('academic_year', 'semester', 'class_capacity', 'status')
             ->withTimestamps();
     }
-
 }

@@ -66,6 +66,17 @@
     </div>
 
     <div class="dashboard-card filters-card">
+        <div class="filters-header">
+            <h3>Course Filters</h3>
+            <a href="{{ route('dashboard.admin.courses.create') }}" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                </svg>
+                New Course
+            </a>
+        </div>
+
         <form method="GET" action="{{ route('dashboard.admin.courses') }}" class="filters-left">
             <label class="field">
                 <span>Search courses</span>
@@ -142,18 +153,24 @@
                                 </span>
                             </td>
                             <td class="row-actions">
-                                <button class="icon-btn" title="View">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                </button>
-                                <button class="icon-btn" title="Edit">
+                                <a href="{{ route('dashboard.admin.courses.edit', $course) }}" class="icon-btn" title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                     </svg>
-                                </button>
+                                </a>
+                                <form method="POST" action="{{ route('dashboard.admin.courses.destroy', $course) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this course?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="icon-btn icon-btn-danger" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty
@@ -494,6 +511,50 @@
     justify-content: center;
     font-weight: 700;
     color: white;
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+}
+
+.btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.875rem;
+}
+
+.icon-btn-danger {
+    color: var(--danger);
+}
+
+.icon-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444;
 }
 
 @media (max-width: 900px) {

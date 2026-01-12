@@ -186,20 +186,6 @@
             <h3>Account Activity</h3>
             <div class="activity-stats">
                 <div class="stat-box">
-                    <div class="stat-icon" style="background: rgba(79, 70, 229, 0.1);">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 20V10"></path>
-                            <path d="M12 20V4"></path>
-                            <path d="M6 20v-6"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <span class="stat-label">Total Logins</span>
-                        <span class="stat-value">--</span>
-                    </div>
-                </div>
-
-                <div class="stat-box">
                     <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1);">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -208,7 +194,13 @@
                     </div>
                     <div>
                         <span class="stat-label">Last Login</span>
-                        <span class="stat-value">--</span>
+                        <span class="stat-value">
+                            @if($user->last_login)
+                                {{ $user->last_login->format('F d, Y g:i A') }}
+                            @else
+                                Never
+                            @endif
+                        </span>
                     </div>
                 </div>
             </div>
