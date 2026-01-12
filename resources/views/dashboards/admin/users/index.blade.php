@@ -33,7 +33,7 @@
                 <input
                     type="text"
                     name="search"
-                    placeholder="Search by name or email..."
+                    placeholder="Search users..."
                     value="{{ request('search') }}"
                     class="filter-input"
                 >
@@ -72,11 +72,43 @@
         </a>
     </div>
 
+    <!-- Bulk Actions Bar -->
+    <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+        <div class="bulk-actions-content">
+            <span class="bulk-selected-count">0 users selected</span>
+            <form method="POST" action="{{ route('dashboard.admin.users.bulk-action') }}" id="bulkActionForm" class="bulk-actions-form">
+                @csrf
+                <input type="hidden" name="action" id="bulkAction" value="">
+                <input type="hidden" name="role" id="bulkRole" value="">
+                <div id="selectedUsersContainer"></div>
+
+                <select class="bulk-select" id="bulkActionSelect">
+                    <option value="">Select Action</option>
+                    <option value="change_role">Change Role</option>
+                    <option value="delete">Delete Selected</option>
+                </select>
+
+                <select class="bulk-select" id="roleSelect" style="display: none;">
+                    <option value="">Select Role</option>
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="admin">Admin</option>
+                </select>
+
+                <button type="button" class="btn btn-primary btn-sm" onclick="executeBulkAction()">Apply</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="clearSelection()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Users Table -->
     <div class="users-table-container">
         <table class="users-table">
             <thead>
                 <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
@@ -88,8 +120,15 @@
                 @forelse($users as $user)
                     <tr>
                         <td>
+                            <input type="checkbox" class="user-checkbox" value="{{ $user->id }}" onchange="updateBulkActions()">
+                        </td>
+                        <td>
                             <div class="user-cell">
-                                <div class="user-avatar">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                                @if($user->profile_picture)
+                                    <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="{{ $user->name }}" class="user-avatar-img">
+                                @else
+                                    <div class="user-avatar">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                                @endif
                                 <span class="user-name">{{ $user->name }}</span>
                             </div>
                         </td>
@@ -129,7 +168,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="empty-state">
+                        <td colspan="6" class="empty-state">
                             <div class="empty-state-content">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -350,6 +389,54 @@
     display: inline;
 }
 
+.bulk-actions-bar {
+    background: var(--bg-dark-secondary);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.bulk-actions-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.bulk-selected-count {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.bulk-actions-form {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.bulk-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-md);
+    color: var(--text-dark);
+    font-size: 0.875rem;
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.875rem;
+}
+
+.user-avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .empty-state {
     text-align: center;
     padding: var(--spacing-2xl) !important;
@@ -386,5 +473,93 @@
     }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+    const bulkBar = document.getElementById('bulkActionsBar');
+    const count = checkboxes.length;
+
+    if (count > 0) {
+        bulkBar.style.display = 'block';
+        document.querySelector('.bulk-selected-count').textContent = `${count} user${count > 1 ? 's' : ''} selected`;
+    } else {
+        bulkBar.style.display = 'none';
+        document.getElementById('selectAll').checked = false;
+    }
+}
+
+document.getElementById('bulkActionSelect').addEventListener('change', function() {
+    const roleSelect = document.getElementById('roleSelect');
+    if (this.value === 'change_role') {
+        roleSelect.style.display = 'block';
+    } else {
+        roleSelect.style.display = 'none';
+    }
+});
+
+function executeBulkAction() {
+    const action = document.getElementById('bulkActionSelect').value;
+    if (!action) {
+        alert('Please select an action');
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one user');
+        return;
+    }
+
+    if (action === 'change_role') {
+        const role = document.getElementById('roleSelect').value;
+        if (!role) {
+            alert('Please select a role');
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to change the role of ${checkboxes.length} user(s) to ${role}?`)) {
+            return;
+        }
+
+        document.getElementById('bulkRole').value = role;
+    } else if (action === 'delete') {
+        if (!confirm(`Are you sure you want to delete ${checkboxes.length} user(s)? This action cannot be undone.`)) {
+            return;
+        }
+    }
+
+    document.getElementById('bulkAction').value = action;
+
+    // Clear existing hidden inputs
+    const container = document.getElementById('selectedUsersContainer');
+    container.innerHTML = '';
+
+    // Add selected user IDs
+    checkboxes.forEach(checkbox => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'user_ids[]';
+        input.value = checkbox.value;
+        container.appendChild(input);
+    });
+
+    document.getElementById('bulkActionForm').submit();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('selectAll').checked = false;
+    updateBulkActions();
+}
+</script>
 @endpush
 @endsection

@@ -28,7 +28,11 @@
         <!-- Profile Card -->
         <div class="detail-card profile-card">
             <div class="profile-header">
-                <div class="user-avatar-xl">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                @if($user->profile_picture)
+                    <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="{{ $user->name }}" class="user-avatar-xl-img">
+                @else
+                    <div class="user-avatar-xl">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                @endif
                 <div class="profile-info">
                     <h2>{{ $user->name }}</h2>
                     <span class="role-badge role-{{ $user->role }}">
@@ -48,6 +52,62 @@
                         <span class="detail-value">{{ $user->email }}</span>
                     </div>
                 </div>
+
+                @if($user->phone)
+                    <div class="detail-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        <div>
+                            <span class="detail-label">Phone</span>
+                            <span class="detail-value">{{ $user->phone }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                @if($user->address)
+                    <div class="detail-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <div>
+                            <span class="detail-label">Address</span>
+                            <span class="detail-value">{{ $user->address }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                @if($user->date_of_birth)
+                    <div class="detail-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <div>
+                            <span class="detail-label">Date of Birth</span>
+                            <span class="detail-value">{{ $user->date_of_birth->format('F d, Y') }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                @if($user->nif)
+                    <div class="detail-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <div>
+                            <span class="detail-label">NIF</span>
+                            <span class="detail-value">{{ $user->nif }}</span>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="detail-item">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -73,6 +133,52 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Recent Activity Log -->
+        <div class="detail-card">
+            <h3>Recent Activity</h3>
+            @if($user->activities && $user->activities->count() > 0)
+                <div class="activity-log">
+                    @foreach($user->activities as $activity)
+                        <div class="activity-log-item">
+                            <div class="activity-icon activity-{{ $activity->action }}">
+                                @if($activity->action === 'created')
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                @elseif($activity->action === 'updated')
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                @elseif($activity->action === 'deleted')
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                @endif
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-description">
+                                    <strong>{{ ucfirst($activity->action) }}</strong>
+                                    <span>{{ $activity->description }}</span>
+                                </div>
+                                <div class="activity-meta">
+                                    @if($activity->performer)
+                                        <span>by {{ $activity->performer->name }}</span>
+                                        <span>•</span>
+                                    @endif
+                                    <span>{{ $activity->created_at->diffForHumans() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="empty-activity">No activity recorded yet</p>
+            @endif
         </div>
 
         <!-- Activity Card -->
@@ -241,6 +347,83 @@
     font-weight: 700;
     color: white;
     font-size: 2rem;
+}
+
+.user-avatar-xl-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.activity-log {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.activity-log-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-md);
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.activity-icon.activity-created {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.activity-icon.activity-updated {
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary);
+}
+
+.activity-icon.activity-deleted {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.activity-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.activity-description {
+    color: var(--text-dark);
+    font-size: 0.9375rem;
+}
+
+.activity-description strong {
+    font-weight: 600;
+}
+
+.activity-meta {
+    display: flex;
+    gap: var(--spacing-xs);
+    color: var(--text-dark-secondary);
+    font-size: 0.8125rem;
+}
+
+.empty-activity {
+    text-align: center;
+    color: var(--text-dark-secondary);
+    padding: var(--spacing-xl);
+    font-style: italic;
 }
 
 .profile-info h2 {

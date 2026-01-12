@@ -22,6 +22,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
+        'address',
+        'date_of_birth',
+        'nif',
+        'profile_picture',
     ];
 
     /**
@@ -44,6 +49,23 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'date_of_birth' => 'date',
         ];
+    }
+
+    /**
+     * Get user activities
+     */
+    public function activities()
+    {
+        return $this->hasMany(UserActivity::class);
+    }
+
+    /**
+     * Get performed activities
+     */
+    public function performedActivities()
+    {
+        return $this->hasMany(UserActivity::class, 'performed_by');
     }
 }

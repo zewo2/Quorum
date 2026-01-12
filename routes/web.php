@@ -32,6 +32,7 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
 
     // User Management CRUD
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::post('users/bulk-action', [UserController::class, 'bulkAction'])->name('users.bulk-action');
         Route::resource('users', UserController::class);
     });
 
