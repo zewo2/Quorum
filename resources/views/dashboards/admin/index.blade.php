@@ -21,7 +21,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>Total Users</h3>
-			<p class="stat-value">1,245</p>
+			<p class="stat-value">{{ $totalUsers }}</p>
 		</div>
 	</div>
 
@@ -34,7 +34,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>Active Courses</h3>
-			<p class="stat-value">87</p>
+			<p class="stat-value">{{ $activeCourses }}</p>
 		</div>
 	</div>
 
@@ -48,8 +48,8 @@
 			</svg>
 		</div>
 		<div class="stat-content">
-			<h3>Timetables</h3>
-			<p class="stat-value">24</p>
+			<h3>Enrollments</h3>
+			<p class="stat-value">{{ $totalEnrollments }}</p>
 		</div>
 	</div>
 
@@ -60,8 +60,8 @@
 			</svg>
 		</div>
 		<div class="stat-content">
-			<h3>Rooms</h3>
-			<p class="stat-value">156</p>
+			<h3>Departments</h3>
+			<p class="stat-value">{{ $departmentCount }}</p>
 		</div>
 	</div>
 
