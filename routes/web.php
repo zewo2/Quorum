@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\TeacherSubjectController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +36,10 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('users/bulk-action', [UserController::class, 'bulkAction'])->name('users.bulk-action');
         Route::resource('users', UserController::class);
+        Route::resource('enrollments', EnrollmentController::class)->except(['show']);
+        Route::resource('teacher-subjects', TeacherSubjectController::class)
+            ->except(['show'])
+            ->parameters(['teacher-subjects' => 'teacherSubject']);
     });
 
     Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');

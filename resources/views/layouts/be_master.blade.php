@@ -44,6 +44,25 @@
                             </svg>
                             <span>Users</span>
                         </a>
+                        <a href="{{ route('dashboard.admin.enrollments.index') }}" class="nav-item {{ request()->routeIs('dashboard.admin.enrollments.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8 14a5 5 0 0 1 10 0v2"></path>
+                                <circle cx="13" cy="9" r="4"></circle>
+                                <path d="M6 8H3v12h6" />
+                                <path d="M7 12H3" />
+                            </svg>
+                            <span>Enrollments</span>
+                        </a>
+                        <a href="{{ route('dashboard.admin.teacher-subjects.index') }}" class="nav-item {{ request()->routeIs('dashboard.admin.teacher-subjects.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 0 4 19.5v0A2.5 2.5 0 0 0 6.5 22H20" />
+                                <path d="M12 6h7" />
+                                <path d="M12 10h7" />
+                                <path d="M12 14h7" />
+                            </svg>
+                            <span>Teacher Subjects</span>
+                        </a>
                         <a href="{{ route('dashboard.admin.courses') }}" class="nav-item {{ request()->routeIs('dashboard.admin.courses') ? 'active' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>

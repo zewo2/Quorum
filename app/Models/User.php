@@ -68,4 +68,41 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserActivity::class, 'performed_by');
     }
+
+    /**
+     * Student enrollments
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'student_id');
+    }
+
+    /**
+     * Courses this student is enrolled in
+     */
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments', 'student_id', 'course_id')
+            ->withPivot('status', 'final_grade', 'notes')
+            ->withTimestamps();
+    }
+
+    /**
+     * Subjects this teacher is assigned to
+     */
+    public function teacherSubjects()
+    {
+        return $this->hasMany(TeacherSubject::class, 'teacher_id');
+    }
+
+    /**
+     * Subjects taught by this teacher (direct relation)
+     */
+    public function subjectsTaught()
+    {
+        return $this->belongsToMany(Subject::class, 'teacher_subjects', 'teacher_id', 'subject_id')
+            ->withPivot('academic_year', 'semester', 'class_capacity', 'status')
+            ->withTimestamps();
+    }
+
 }

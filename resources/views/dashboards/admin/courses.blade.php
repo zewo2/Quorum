@@ -15,8 +15,8 @@
             </div>
             <div>
                 <p class="stat-label">Total Courses</p>
-                <p class="stat-value">87</p>
-                <span class="stat-meta">12 new this semester</span>
+                <p class="stat-value">{{ $totalCourses }}</p>
+                <span class="stat-meta">{{ $activeCourses }} active</span>
             </div>
         </div>
 
@@ -29,8 +29,8 @@
             </div>
             <div>
                 <p class="stat-label">Active Enrollments</p>
-                <p class="stat-value">5,420</p>
-                <span class="stat-meta">+8% vs last term</span>
+                <p class="stat-value">{{ $totalEnrollments }}</p>
+                <span class="stat-meta">Students enrolled</span>
             </div>
         </div>
 
@@ -45,8 +45,8 @@
             </div>
             <div>
                 <p class="stat-label">Departments</p>
-                <p class="stat-value">9</p>
-                <span class="stat-meta">Science, Tech, Business...</span>
+                <p class="stat-value">{{ $departmentCount }}</p>
+                <span class="stat-meta">{{ $departments->implode(', ') }}</span>
             </div>
         </div>
 
@@ -58,47 +58,51 @@
                 </svg>
             </div>
             <div>
-                <p class="stat-label">Rooms Linked</p>
-                <p class="stat-value">156</p>
-                <span class="stat-meta">38 labs • 118 classrooms</span>
+                <p class="stat-label">Average Capacity</p>
+                <p class="stat-value">{{ round($courses->avg('capacity') ?? 0) }}</p>
+                <span class="stat-meta">students per course</span>
             </div>
         </div>
     </div>
 
     <div class="dashboard-card filters-card">
-        <div class="filters-left">
+        <form method="GET" action="{{ route('dashboard.admin.courses') }}" class="filters-left">
             <label class="field">
                 <span>Search courses</span>
-                <input type="text" placeholder="e.g. Web Development" value="Web" aria-label="Search courses">
+                <input type="text" name="search" placeholder="e.g. Web Development" value="{{ request('search') }}" aria-label="Search courses">
             </label>
             <label class="field">
                 <span>Department</span>
-                <select>
-                    <option>All</option>
-                    <option>Computer Science</option>
-                    <option>Business</option>
-                    <option>Engineering</option>
+                <select name="department">
+                    <option value="">All</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept }}" {{ request('department') === $dept ? 'selected' : '' }}>
+                            {{ $dept }}
+                        </option>
+                    @endforeach
                 </select>
             </label>
             <label class="field">
                 <span>Status</span>
-                <select>
-                    <option>Active</option>
-                    <option>Draft</option>
-                    <option>Archived</option>
+                <select name="status">
+                    <option value="">All</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                 </select>
             </label>
-        </div>
-        <div class="filters-actions">
-            <button class="btn btn-secondary">Reset</button>
-            <button class="btn btn-primary">Add Course</button>
-        </div>
+            <div class="filters-actions">
+                <button type="submit" class="btn btn-secondary">Filter</button>
+                @if(request()->hasAny(['search', 'department', 'status']))
+                    <a href="{{ route('dashboard.admin.courses') }}" class="btn btn-ghost">Reset</a>
+                @endif
+            </div>
+        </form>
     </div>
 
     <div class="dashboard-card table-card">
         <div class="card-header">
             <h3>Course Catalog</h3>
-            <span class="chip">Showing 8 of 87</span>
+            <span class="chip">Showing {{ $courses->count() }} of {{ $totalCourses }}</span>
         </div>
 
         <div class="table-wrapper">
@@ -108,184 +112,119 @@
                         <th>Course</th>
                         <th>Code</th>
                         <th>Department</th>
-                        <th>Instructor</th>
-                        <th>Students</th>
+                        <th>Year/Semester</th>
+                        <th>Enrolled</th>
+                        <th>Subjects</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>
-                            <div class="item-main">
-                                <div class="item-dot" style="background: #22c55e;"></div>
-                                <div>
-                                    <p class="item-title">Web Development II</p>
-                                    <span class="item-sub">Front-end frameworks</span>
+                    @forelse($courses as $course)
+                        <tr>
+                            <td>
+                                <div class="item-main">
+                                    <div class="item-dot" style="background: {{ $course->status === 'active' ? '#22c55e' : '#ef4444' }};"></div>
+                                    <div>
+                                        <p class="item-title">{{ $course->name }}</p>
+                                        <span class="item-sub">{{ Str::limit($course->description, 40) }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td>WD202</td>
-                        <td>Computer Science</td>
-                        <td>Laura Mendes</td>
-                        <td>132</td>
-                        <td><span class="badge badge-success">Active</span></td>
-                        <td class="row-actions">
-                            <button class="icon-btn" title="View">👁</button>
-                            <button class="icon-btn" title="Edit">✏️</button>
-                            <button class="icon-btn danger" title="Archive">🗑</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="item-main">
-                                <div class="item-dot" style="background: #0ea5e9;"></div>
-                                <div>
-                                    <p class="item-title">Data Structures</p>
-                                    <span class="item-sub">Algorithms & complexity</span>
+                            </td>
+                            <td>{{ $course->code }}</td>
+                            <td>{{ $course->department }}</td>
+                            <td>Year {{ $course->year }} / Sem {{ $course->semester }}</td>
+                            <td>{{ $course->enrollments_count }} / {{ $course->capacity }}</td>
+                            <td>{{ $course->subjects_count }}</td>
+                            <td>
+                                <span class="badge badge-{{ $course->status === 'active' ? 'success' : 'archived' }}">
+                                    {{ ucfirst($course->status) }}
+                                </span>
+                            </td>
+                            <td class="row-actions">
+                                <button class="icon-btn" title="View">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                                <button class="icon-btn" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <div class="empty-content">
+                                    <p>No courses found</p>
+                                    @if(request()->hasAny(['search', 'department', 'status']))
+                                        <a href="{{ route('dashboard.admin.courses') }}" class="btn btn-secondary">Clear filters</a>
+                                    @endif
                                 </div>
-                            </div>
-                        </td>
-                        <td>CS210</td>
-                        <td>Computer Science</td>
-                        <td>Rui Costa</td>
-                        <td>118</td>
-                        <td><span class="badge badge-success">Active</span></td>
-                        <td class="row-actions">
-                            <button class="icon-btn" title="View">👁</button>
-                            <button class="icon-btn" title="Edit">✏️</button>
-                            <button class="icon-btn danger" title="Archive">🗑</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="item-main">
-                                <div class="item-dot" style="background: #f97316;"></div>
-                                <div>
-                                    <p class="item-title">Corporate Finance</p>
-                                    <span class="item-sub">Capital budgeting</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>FIN310</td>
-                        <td>Business</td>
-                        <td>Ines Silva</td>
-                        <td>96</td>
-                        <td><span class="badge badge-warning">Draft</span></td>
-                        <td class="row-actions">
-                            <button class="icon-btn" title="View">👁</button>
-                            <button class="icon-btn" title="Edit">✏️</button>
-                            <button class="icon-btn danger" title="Archive">🗑</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="item-main">
-                                <div class="item-dot" style="background: #a855f7;"></div>
-                                <div>
-                                    <p class="item-title">Human-Computer Interaction</p>
-                                    <span class="item-sub">UX research</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>UX330</td>
-                        <td>Design</td>
-                        <td>Andre Sousa</td>
-                        <td>74</td>
-                        <td><span class="badge badge-success">Active</span></td>
-                        <td class="row-actions">
-                            <button class="icon-btn" title="View">👁</button>
-                            <button class="icon-btn" title="Edit">✏️</button>
-                            <button class="icon-btn danger" title="Archive">🗑</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="item-main">
-                                <div class="item-dot" style="background: #f43f5e;"></div>
-                                <div>
-                                    <p class="item-title">Data Ethics</p>
-                                    <span class="item-sub">Governance & privacy</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>DS260</td>
-                        <td>Computer Science</td>
-                        <td>Helena Duarte</td>
-                        <td>63</td>
-                        <td><span class="badge badge-archived">Archived</span></td>
-                        <td class="row-actions">
-                            <button class="icon-btn" title="View">👁</button>
-                            <button class="icon-btn" title="Edit">✏️</button>
-                            <button class="icon-btn danger" title="Archive">🗑</button>
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
+
+        @if($courses->hasPages())
+            <div class="pagination-wrapper">
+                {{ $courses->links() }}
+            </div>
+        @endif
     </div>
 
     <div class="dashboard-grid info-grid">
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Upcoming Milestones</h3>
-                <span class="chip">January 2026</span>
+                <h3>Courses by Department</h3>
+                <span class="chip">Distribution</span>
             </div>
             <div class="timeline">
-                <div class="timeline-row">
-                    <div class="timeline-dot" style="border-color: #22c55e;"></div>
-                    <div>
-                        <p class="timeline-title">Publish Spring catalog</p>
-                        <span class="timeline-meta">Jan 12 • All departments</span>
+                @foreach($departments as $dept)
+                    @php
+                        $deptCount = \App\Models\Course::where('department', $dept)->count();
+                        $colors = ['#22c55e', '#0ea5e9', '#f59e0b', '#a855f7', '#f43f5e'];
+                        $color = $colors[$loop->index % count($colors)];
+                    @endphp
+                    <div class="timeline-row">
+                        <div class="timeline-dot" style="border-color: {{ $color }};"></div>
+                        <div>
+                            <p class="timeline-title">{{ $dept }}</p>
+                            <span class="timeline-meta">{{ $deptCount }} {{ Str::plural('course', $deptCount) }}</span>
+                        </div>
                     </div>
-                </div>
-                <div class="timeline-row">
-                    <div class="timeline-dot" style="border-color: #0ea5e9;"></div>
-                    <div>
-                        <p class="timeline-title">Room allocation freeze</p>
-                        <span class="timeline-meta">Jan 18 • Facilities</span>
-                    </div>
-                </div>
-                <div class="timeline-row">
-                    <div class="timeline-dot" style="border-color: #f59e0b;"></div>
-                    <div>
-                        <p class="timeline-title">Enrollment opens</p>
-                        <span class="timeline-meta">Jan 22 • Portal announcement</span>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
 
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Top Instructors</h3>
-                <span class="chip">by satisfaction</span>
+                <h3>Most Enrolled Courses</h3>
+                <span class="chip">by students</span>
             </div>
             <div class="instructors-list">
-                <div class="instructor-item">
-                    <div class="avatar">LM</div>
-                    <div>
-                        <p class="item-title">Laura Mendes</p>
-                        <span class="item-sub">Web Development • 4.8/5</span>
+                @php
+                    $topCourses = \App\Models\Course::withCount('enrollments')
+                        ->orderByDesc('enrollments_count')
+                        ->take(5)
+                        ->get();
+                @endphp
+                @foreach($topCourses as $topCourse)
+                    <div class="instructor-item">
+                        <div class="avatar">{{ strtoupper(substr($topCourse->code, 0, 2)) }}</div>
+                        <div>
+                            <p class="item-title">{{ $topCourse->name }}</p>
+                            <span class="item-sub">{{ $topCourse->code }} • {{ $topCourse->department }}</span>
+                        </div>
+                        <span class="badge badge-success">{{ $topCourse->enrollments_count }} enrolled</span>
                     </div>
-                    <span class="badge badge-success">132 students</span>
-                </div>
-                <div class="instructor-item">
-                    <div class="avatar">RC</div>
-                    <div>
-                        <p class="item-title">Rui Costa</p>
-                        <span class="item-sub">Algorithms • 4.7/5</span>
-                    </div>
-                    <span class="badge badge-success">118 students</span>
-                </div>
-                <div class="instructor-item">
-                    <div class="avatar">IS</div>
-                    <div>
-                        <p class="item-title">Ines Silva</p>
-                        <span class="item-sub">Finance • 4.6/5</span>
-                    </div>
-                    <span class="badge badge-warning">Draft</span>
-                </div>
+                @endforeach
             </div>
         </div>
     </div>
@@ -463,6 +402,39 @@
 
 .icon-btn:hover { background: var(--primary); color: white; }
 .icon-btn.danger:hover { background: var(--danger); }
+
+.icon-btn svg { stroke: currentColor; }
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+}
+
+.empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    color: var(--text-dark-secondary);
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-dark);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-dark-secondary);
+    border: 1px solid var(--border-dark);
+}
+
+.btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dark);
+}
 
 .info-grid {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
