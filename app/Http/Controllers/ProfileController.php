@@ -15,7 +15,6 @@ class ProfileController extends Controller
      */
     public function show(User $user): View
     {
-        // Get user's enrollment statistics
         $enrolledCourses = $user->enrollments()->with('course')->get();
         $courseCount = $enrolledCourses->count();
 
@@ -71,9 +70,7 @@ class ProfileController extends Controller
 
         $validated = $request->validated();
 
-        // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
-            // Delete old picture if exists
             if ($user->profile_picture && file_exists(storage_path('app/public/' . $user->profile_picture))) {
                 unlink(storage_path('app/public/' . $user->profile_picture));
             }

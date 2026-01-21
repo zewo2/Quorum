@@ -17,7 +17,7 @@
             </label>
             <label class="field">
                 <span>Search classes</span>
-                <input type="text" placeholder="Search by course or code" value="Web">
+                <input type="text" placeholder="Search by course or code">
             </label>
         </div>
         <div class="filters-actions">
@@ -27,121 +27,63 @@
     </div>
 
     <div class="dashboard-grid cards-grid">
-        <div class="dashboard-card class-card">
-            <div class="card-header">
-                <div>
-                    <p class="eyebrow">CS210 • Year 2</p>
-                    <h3>Web Development</h3>
+        @forelse($teacherSubjects as $subject)
+            <div class="dashboard-card class-card">
+                <div class="card-header">
+                    <div>
+                        <p class="eyebrow">{{ $subject->code ?? 'N/A' }} • {{ $subject->pivot->academic_year ?? 'Current' }}</p>
+                        <h3>{{ $subject->name }}</h3>
+                    </div>
+                    <span class="badge badge-success">{{ $subject->course?->enrollments->count() ?? 0 }} students</span>
                 </div>
-                <span class="badge badge-success">28 students</span>
-            </div>
-            <p class="card-sub">Front-end frameworks and UI engineering</p>
-            <div class="meta-row">
-                <div class="meta">
-                    <span>Schedule</span>
-                    <strong>Mon & Wed • 09:00 - 10:30</strong>
+                <p class="card-sub">{{ $subject->course->name ?? 'General Subjects' }}</p>
+                <div class="meta-row">
+                    <div class="meta">
+                        <span>Capacity</span>
+                        <strong>{{ $subject->pivot->class_capacity ?? 'Unlimited' }}</strong>
+                    </div>
+                    <div class="meta">
+                        <span>Semester</span>
+                        <strong>S{{ $subject->pivot->semester ?? '1' }}</strong>
+                    </div>
+                    <div class="meta">
+                        <span>Status</span>
+                        <strong>{{ ucfirst($subject->pivot->status ?? 'active') }}</strong>
+                    </div>
                 </div>
-                <div class="meta">
-                    <span>Room</span>
-                    <strong>A-204</strong>
-                </div>
-                <div class="meta">
-                    <span>Assignments</span>
-                    <strong>3 open</strong>
-                </div>
-            </div>
-            <div class="class-actions">
-                <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
-                <button class="btn btn-primary">View roster</button>
-            </div>
-        </div>
-
-        <div class="dashboard-card class-card">
-            <div class="card-header">
-                <div>
-                    <p class="eyebrow">CS330 • Year 3</p>
-                    <h3>Database Systems</h3>
-                </div>
-                <span class="badge badge-success">24 students</span>
-            </div>
-            <p class="card-sub">Relational modeling and SQL performance</p>
-            <div class="meta-row">
-                <div class="meta">
-                    <span>Schedule</span>
-                    <strong>Tue & Thu • 11:00 - 12:30</strong>
-                </div>
-                <div class="meta">
-                    <span>Room</span>
-                    <strong>Lab C-305</strong>
-                </div>
-                <div class="meta">
-                    <span>Assignments</span>
-                    <strong>1 open</strong>
+                <div class="class-actions">
+                    <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
+                    <button class="btn btn-primary">View roster</button>
                 </div>
             </div>
-            <div class="class-actions">
-                <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
-                <button class="btn btn-primary">View roster</button>
+        @empty
+            <div class="dashboard-card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <p style="color: var(--text-dark-secondary);">No classes assigned. Contact administration to assign courses.</p>
             </div>
-        </div>
-
-        <div class="dashboard-card class-card">
-            <div class="card-header">
-                <div>
-                    <p class="eyebrow">CS360 • Year 3</p>
-                    <h3>Advanced Programming</h3>
-                </div>
-                <span class="badge badge-warning">32 students</span>
-            </div>
-            <p class="card-sub">Patterns, testing, and performance</p>
-            <div class="meta-row">
-                <div class="meta">
-                    <span>Schedule</span>
-                    <strong>Fri • 14:00 - 17:00</strong>
-                </div>
-                <div class="meta">
-                    <span>Room</span>
-                    <strong>B-101</strong>
-                </div>
-                <div class="meta">
-                    <span>Assignments</span>
-                    <strong>Grading in progress</strong>
-                </div>
-            </div>
-            <div class="class-actions">
-                <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
-                <button class="btn btn-primary">View roster</button>
-            </div>
-        </div>
+        @endforelse
     </div>
 
     <div class="dashboard-grid detail-grid">
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Today’s Sessions</h3>
-                <span class="chip">Jan 8, 2026</span>
+                <h3>Today's Sessions</h3>
+                <span class="chip">{{ date('M d, Y') }}</span>
             </div>
             <div class="schedule-list">
-                <div class="schedule-item">
-                    <div class="schedule-time">09:00 - 10:30</div>
-                    <div class="schedule-body">
-                        <p class="item-title">Web Development</p>
-                        <span class="item-sub">Room A-204 • 28 students</span>
+                @forelse($teacherSubjects->slice(0, 2) as $subject)
+                    <div class="schedule-item">
+                        <div class="schedule-time">TBD</div>
+                        <div class="schedule-body">
+                            <p class="item-title">{{ $subject->name }}</p>
+                            <span class="item-sub">{{ $subject->course?->enrollments->count() ?? 0 }} students</span>
+                        </div>
+                        <div class="row-actions">
+                            <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
+                        </div>
                     </div>
-                    <div class="row-actions">
-                        <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
-                    </div>
-                </div>
-                <div class="schedule-item">
-                    <div class="schedule-time">11:00 - 12:30</div>
-                    <div class="schedule-body">
-                        <p class="item-title">Database Systems</p>
-                        <span class="item-sub">Lab C-305 • 24 students</span>
-                    </div>
-                    <div class="row-actions">
-                        <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>
-                    </div>
-                </div>
+                @empty
+                    <p style="color: var(--text-dark-secondary); padding: var(--spacing-md);">No sessions scheduled for today.</p>
+                @endforelse
             </div>
         </div>
 
@@ -154,26 +96,26 @@
                 <div class="task-item">
                     <div class="task-icon">📝</div>
                     <div>
-                        <p class="item-title">Grade Project 2</p>
-                        <span class="item-sub">Web Development • 28 submissions</span>
+                        <p class="item-title">Grade assignments</p>
+                        <span class="item-sub">Pending student submissions</span>
                     </div>
-                    <span class="badge badge-warning">Due Jan 12</span>
+                    <span class="badge badge-warning">In progress</span>
                 </div>
                 <div class="task-item">
                     <div class="task-icon">📊</div>
                     <div>
-                        <p class="item-title">Upload midterm grades</p>
-                        <span class="item-sub">Database Systems</span>
+                        <p class="item-title">Upload grades</p>
+                        <span class="item-sub">End of term deadline</span>
                     </div>
-                    <span class="badge badge-success">In progress</span>
+                    <span class="badge badge-success">Pending</span>
                 </div>
                 <div class="task-item">
                     <div class="task-icon">📋</div>
                     <div>
-                        <p class="item-title">Attendance report</p>
+                        <p class="item-title">Attendance reports</p>
                         <span class="item-sub">All classes</span>
                     </div>
-                    <span class="badge badge-success">Auto-saving</span>
+                    <span class="badge badge-success">Auto-tracked</span>
                 </div>
             </div>
         </div>

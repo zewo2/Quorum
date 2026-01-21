@@ -50,6 +50,7 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');
     Route::get('/teacher/classes', [TeacherDashboardController::class, 'classes'])->name('teacher.classes');
     Route::get('/teacher/attendance', [TeacherDashboardController::class, 'attendance'])->name('teacher.attendance');
+    Route::post('/teacher/attendance', [TeacherDashboardController::class, 'storeAttendance'])->name('teacher.attendance.store');
 
     Route::resource('student', StudentDashboardController::class)->only(['index'])->names('student');
     Route::get('/student/schedule', [StudentDashboardController::class, 'schedule'])->name('student.schedule');

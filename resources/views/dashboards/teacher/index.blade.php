@@ -19,7 +19,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>My Classes</h3>
-			<p class="stat-value">5</p>
+			<p class="stat-value">{{ $classCount }}</p>
 		</div>
 	</div>
 
@@ -34,7 +34,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>Total Students</h3>
-			<p class="stat-value">142</p>
+			<p class="stat-value">{{ $totalStudents }}</p>
 		</div>
 	</div>
 
@@ -48,7 +48,7 @@
 		</div>
 		<div class="stat-content">
 			<h3>Attendance Rate</h3>
-			<p class="stat-value">94%</p>
+			<p class="stat-value">{{ $attendanceRate }}%</p>
 		</div>
 	</div>
 
@@ -91,24 +91,18 @@
 			<a href="{{ route('dashboard.teacher.classes') }}" class="card-link">View all →</a>
 		</div>
 		<div class="classes-list">
-			<div class="class-item">
-				<div class="class-info">
-					<h4>Web Development</h4>
-					<span class="class-meta">Year 2 • 28 students</span>
+			@forelse($teacherSubjects as $subject)
+				<div class="class-item">
+					<div class="class-info">
+						<h4>{{ $subject->name }}</h4>
+						<span class="class-meta">{{ $subject->course->name ?? 'General' }} • {{ $subject->course?->enrollments->count() ?? 0 }} students</span>
+					</div>
 				</div>
-			</div>
-			<div class="class-item">
-				<div class="class-info">
-					<h4>Database Systems</h4>
-					<span class="class-meta">Year 3 • 24 students</span>
+			@empty
+				<div class="class-item">
+					<p style="color: var(--text-dark-secondary); margin: 0;">No classes assigned</p>
 				</div>
-			</div>
-			<div class="class-item">
-				<div class="class-info">
-					<h4>Advanced Programming</h4>
-					<span class="class-meta">Year 3 • 32 students</span>
-				</div>
-			</div>
+			@endforelse
 		</div>
 	</div>
 

@@ -5,141 +5,145 @@
 
 @section('content')
 <div class="attendance-page">
-    <div class="dashboard-card header-card">
-        <div class="header-left">
-            <label class="field">
-                <span>Class</span>
-                <select>
-                    <option>Web Development • CS210 • Room A-204</option>
-                    <option>Database Systems • CS330 • Lab C-305</option>
-                    <option>Advanced Programming • CS360 • Room B-101</option>
-                </select>
-            </label>
-            <label class="field">
-                <span>Date</span>
-                <input type="date" value="2026-01-08">
-            </label>
-            <label class="field">
-                <span>Session</span>
-                <select>
-                    <option>09:00 - 10:30</option>
-                    <option>11:00 - 12:30</option>
-                    <option>14:00 - 15:30</option>
-                </select>
-            </label>
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
         </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary">Reset</button>
-            <button class="btn btn-primary">Save attendance</button>
-        </div>
-    </div>
+    @endif
 
-    <div class="dashboard-grid summary-grid">
-        <div class="dashboard-card summary-card">
-            <p class="stat-label">Present</p>
-            <p class="stat-value">25</p>
-            <span class="stat-meta">89% of class</span>
-        </div>
-        <div class="dashboard-card summary-card">
-            <p class="stat-label">Late</p>
-            <p class="stat-value">2</p>
-            <span class="stat-meta">Arrived after 09:10</span>
-        </div>
-        <div class="dashboard-card summary-card">
-            <p class="stat-label">Absent</p>
-            <p class="stat-value">1</p>
-            <span class="stat-meta">Notified: 0</span>
-        </div>
-    </div>
+    <form method="POST" action="{{ route('dashboard.teacher.attendance.store') }}" id="attendanceForm">
+        @csrf
+        <input type="hidden" name="subject" value="{{ $selectedSubject?->id }}">
 
-    <div class="dashboard-card attendance-card">
-        <div class="card-header">
-            <div>
-                <h3>Roster</h3>
-                <p class="card-sub">Tap a status to mark attendance. All data is hardcoded.</p>
+        <div class="dashboard-card header-card">
+            <div class="header-left">
+                <label class="field">
+                    <span>Class</span>
+                    <select name="subject_select" onchange="updateFilters()">
+                        @forelse($teacherSubjects as $subject)
+                            <option value="{{ $subject->id }}" {{ $selectedSubject?->id === $subject->id ? 'selected' : '' }}>
+                                {{ $subject->name }} • {{ $subject->course->name ?? 'General' }}
+                            </option>
+                        @empty
+                            <option disabled>No classes available</option>
+                        @endforelse
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Date</span>
+                    <input type="date" name="date" value="{{ $date }}" onchange="updateFilters()">
+                </label>
+                <label class="field">
+                    <span>Session</span>
+                    <select name="session" onchange="updateFilters()">
+                        <option value="session_1" {{ $session === 'session_1' ? 'selected' : '' }}>Session 1</option>
+                        <option value="session_2" {{ $session === 'session_2' ? 'selected' : '' }}>Session 2</option>
+                        <option value="session_3" {{ $session === 'session_3' ? 'selected' : '' }}>Session 3</option>
+                    </select>
+                </label>
             </div>
-            <div class="legend">
-                <span class="badge badge-success">P</span>
-                <span class="legend-label">Present</span>
-                <br>
-                <span class="badge badge-warning">L</span>
-                <span class="legend-label">Late</span>
-                <br>
-                <span class="badge badge-absent">A</span>
-                <span class="legend-label">Absent</span>
+            <div class="header-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">Reset</button>
+                <button type="submit" class="btn btn-primary">Save attendance</button>
             </div>
         </div>
 
-        <div class="table-wrapper">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Student ID</th>
-                        <th>Program</th>
-                        <th>Status</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach([['Maria Silva','ST20314','Computer Science','Present',''], ['Joao Costa','ST19877','Computer Science','Late','Traffic'], ['Ines Rocha','ST20544','Computer Science','Present',''], ['Ricardo Pereira','ST20011','Computer Science','Absent',''], ['Ana Matos','ST20402','Computer Science','Present','']] as $row)
-                        <tr>
-                            <td>
-                                <div class="user-cell">
-                                    <div class="avatar">{{ strtoupper(substr($row[0], 0, 2)) }}</div>
-                                    <div>
-                                        <p class="item-title">{{ $row[0] }}</p>
-                                        <span class="item-sub">Year 2</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ $row[1] }}</td>
-                            <td>{{ $row[2] }}</td>
-                            <td>
-                                <div class="status-toggle">
-                                    <button class="pill {{ $row[3] === 'Present' ? 'active' : '' }}">P</button>
-                                    <button class="pill {{ $row[3] === 'Late' ? 'active warning' : '' }}">L</button>
-                                    <button class="pill {{ $row[3] === 'Absent' ? 'active danger' : '' }}">A</button>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="notes-box">{{ $row[4] ?: '—' }}</div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
+        @if($selectedSubject)
+            <div class="dashboard-grid summary-grid">
+                <div class="dashboard-card summary-card">
+                    <p class="stat-label">Present</p>
+                    <p class="stat-value" id="presentCount">{{ $presentCount }}</p>
+                    <span class="stat-meta">{{ $enrollments->count() > 0 ? round(($presentCount / $enrollments->count()) * 100) : 0 }}% of class</span>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <p class="stat-label">Late</p>
+                    <p class="stat-value" id="lateCount">{{ $lateCount }}</p>
+                    <span class="stat-meta">Arrived after start</span>
+                </div>
+                <div class="dashboard-card summary-card">
+                    <p class="stat-label">Absent</p>
+                    <p class="stat-value" id="absentCount">{{ $absentCount }}</p>
+                    <span class="stat-meta">Not present</span>
+                </div>
+            </div>
 
-    <div class="dashboard-card">
-        <div class="card-header">
-            <h3>Attendance Trend</h3>
-            <span class="chip">Last 5 sessions</span>
-        </div>
-        <div class="trend-grid">
-            <div class="trend-bar">
-                <div class="bar" style="height: 92%;"></div>
-                <span>Mon</span>
+            <div class="dashboard-card attendance-card">
+                <div class="card-header">
+                    <div>
+                        <h3>Roster - {{ $selectedSubject->name }}</h3>
+                        <p class="card-sub">{{ $enrollments->count() }} students enrolled</p>
+                    </div>
+                    <div class="legend">
+                        <span class="badge badge-success">P</span>
+                        <span class="legend-label">Present</span>
+                        <br>
+                        <span class="badge badge-warning">L</span>
+                        <span class="legend-label">Late</span>
+                        <br>
+                        <span class="badge badge-absent">A</span>
+                        <span class="legend-label">Absent</span>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Student ID</th>
+                                <th>Program</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($enrollments as $enrollment)
+                                @php
+                                    $existingAttendance = $enrollment->attendances->first();
+                                    $status = $existingAttendance?->status ?? 'present';
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <div class="avatar">{{ strtoupper(substr($enrollment->user->name, 0, 2)) }}</div>
+                                            <div>
+                                                <p class="item-title">{{ $enrollment->user->name }}</p>
+                                                <span class="item-sub">{{ $enrollment->user->role ?? 'Student' }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ $enrollment->user->student_id ?? 'N/A' }}</td>
+                                    <td>{{ $selectedSubject->course->name ?? 'General' }}</td>
+                                    <td>
+                                        <input type="hidden" name="attendance[{{ $loop->index }}][enrollment_id]" value="{{ $enrollment->id }}">
+                                        <div class="status-toggle" data-enrollment="{{ $enrollment->id }}">
+                                            <button type="button" class="pill status-btn {{ $status === 'present' ? 'active' : '' }}" data-status="present" onclick="setStatus(this)">P</button>
+                                            <button type="button" class="pill status-btn {{ $status === 'late' ? 'active warning' : '' }}" data-status="late" onclick="setStatus(this)">L</button>
+                                            <button type="button" class="pill status-btn {{ $status === 'absent' ? 'active danger' : '' }}" data-status="absent" onclick="setStatus(this)">A</button>
+                                        </div>
+                                        <input type="hidden" name="attendance[{{ $loop->index }}][status]" value="{{ $status }}" class="status-input">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="attendance[{{ $loop->index }}][notes]" value="{{ $existingAttendance?->notes ?? '' }}" class="notes-input" placeholder="Optional notes">
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: var(--spacing-lg); color: var(--text-dark-secondary);">
+                                        No students enrolled in this class yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="trend-bar">
-                <div class="bar" style="height: 88%;"></div>
-                <span>Tue</span>
+        @else
+            <div class="dashboard-card" style="text-align: center; padding: 3rem;">
+                <p style="color: var(--text-dark-secondary);">Select a class above to view and manage attendance.</p>
             </div>
-            <div class="trend-bar">
-                <div class="bar" style="height: 94%;"></div>
-                <span>Wed</span>
-            </div>
-            <div class="trend-bar">
-                <div class="bar" style="height: 86%;"></div>
-                <span>Thu</span>
-            </div>
-            <div class="trend-bar">
-                <div class="bar" style="height: 91%;"></div>
-                <span>Fri</span>
-            </div>
-        </div>
-    </div>
+        @endif
+    </form>
 </div>
 
 @push('styles')
@@ -150,6 +154,9 @@
 .field { display: flex; flex-direction: column; gap: 6px; color: var(--text-dark-secondary); }
 .field input, .field select { padding: var(--spacing-sm) var(--spacing-md); background: var(--bg-dark); border: 1px solid var(--border-dark); border-radius: var(--radius-md); color: var(--text-dark); }
 .header-actions { display: flex; gap: var(--spacing-md); }
+
+.alert { padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
+.alert-success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
 
 .summary-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .summary-card { border: 1px solid var(--border-dark); }
@@ -166,18 +173,15 @@
 .data-table th, .data-table td { padding: var(--spacing-md); border-bottom: 1px solid var(--border-dark); text-align: left; }
 .data-table th { color: var(--text-dark); background: rgba(255, 255, 255, 0.03); font-weight: 600; }
 .user-cell { display: flex; align-items: center; gap: var(--spacing-md); }
-.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; }
 .status-toggle { display: inline-flex; gap: 6px; }
-.pill { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border-dark); background: rgba(255, 255, 255, 0.02); color: var(--text-dark-secondary); cursor: pointer; }
+.pill { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border-dark); background: rgba(255, 255, 255, 0.02); color: var(--text-dark-secondary); cursor: pointer; transition: all 0.2s; }
+.pill:hover { background: rgba(255, 255, 255, 0.05); }
 .pill.active { background: rgba(16, 185, 129, 0.12); color: #10b981; border-color: rgba(16, 185, 129, 0.6); }
 .pill.active.warning { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); }
 .pill.active.danger { background: rgba(239, 68, 68, 0.12); color: #ef4444; border-color: rgba(239, 68, 68, 0.5); }
-.notes-box { padding: var(--spacing-sm) var(--spacing-md); background: rgba(255, 255, 255, 0.03); border-radius: var(--radius-md); color: var(--text-dark-secondary); }
-
-.chip { padding: 6px 12px; border: 1px solid var(--border-dark); border-radius: 999px; background: rgba(255, 255, 255, 0.04); color: var(--text-dark-secondary); font-size: 0.85rem; }
-.trend-grid { display: grid; grid-template-columns: repeat(5, minmax(40px, 1fr)); gap: var(--spacing-md); align-items: end; height: 180px; }
-.trend-bar { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-sm); }
-.bar { width: 100%; border-radius: var(--radius-md); background: linear-gradient(180deg, var(--primary), var(--primary-dark)); }
+.notes-input { padding: var(--spacing-sm) var(--spacing-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-dark); border-radius: var(--radius-md); color: var(--text-dark); width: 100%; max-width: 250px; }
+.notes-input:focus { outline: none; border-color: var(--primary); }
 
 .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 0.8rem; }
 .badge-success { background: rgba(16, 185, 129, 0.12); color: #10b981; }
@@ -189,5 +193,54 @@
     .legend { grid-template-columns: repeat(2, auto); row-gap: var(--spacing-xs); }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+function setStatus(button) {
+    const toggle = button.closest('.status-toggle');
+    const statusInput = button.closest('tr').querySelector('.status-input');
+    const status = button.dataset.status;
+
+    toggle.querySelectorAll('.status-btn').forEach(btn => {
+        btn.classList.remove('active', 'warning', 'danger');
+    });
+
+    button.classList.add('active');
+    if (status === 'late') {
+        button.classList.add('warning');
+    } else if (status === 'absent') {
+        button.classList.add('danger');
+    }
+
+    statusInput.value = status;
+
+    updateCounts();
+}
+
+function updateCounts() {
+    const statusInputs = document.querySelectorAll('.status-input');
+    let present = 0, late = 0, absent = 0;
+
+    statusInputs.forEach(input => {
+        if (input.value === 'present') present++;
+        else if (input.value === 'late') late++;
+        else if (input.value === 'absent') absent++;
+    });
+
+    document.getElementById('presentCount').textContent = present;
+    document.getElementById('lateCount').textContent = late;
+    document.getElementById('absentCount').textContent = absent;
+}
+
+function updateFilters() {
+    const form = document.getElementById('attendanceForm');
+    const subject = form.querySelector('[name="subject_select"]').value;
+    const date = form.querySelector('[name="date"]').value;
+    const session = form.querySelector('[name="session"]').value;
+
+    window.location.href = `?subject=${subject}&date=${date}&session=${session}`;
+}
+</script>
 @endpush
 @endsection

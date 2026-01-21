@@ -19,13 +19,11 @@ class StudentDashboardController extends Controller
             return $enrollment->course->credits ?? 0;
         });
 
-        // Calculate average grade from enrollments
         $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
         $averageGrade = $enrollmentsWithGrades->count() > 0
             ? round($enrollmentsWithGrades->avg('grade'), 2)
             : 0;
 
-        // Get GPA (using a simple conversion: grade/20 * 4.0 scale)
         $gpa = $enrollmentsWithGrades->count() > 0
             ? round($enrollmentsWithGrades->avg(function ($enrollment) {
                 return ($enrollment->grade / 20) * 4.0;
@@ -61,7 +59,6 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
         $enrolledCourses = $user->enrollments()->with('course')->get();
 
-        // Calculate GPA and average grade
         $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
         $averageGrade = $enrollmentsWithGrades->count() > 0
             ? round($enrollmentsWithGrades->avg('grade'), 2)
@@ -86,7 +83,6 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
         $enrolledCourses = $user->enrollments()->with('course')->get();
 
-        // Calculate statistics
         $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
 
         $averageGrade = $enrollmentsWithGrades->count() > 0
