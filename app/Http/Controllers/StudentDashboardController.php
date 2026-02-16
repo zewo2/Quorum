@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Timetable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class StudentDashboardController extends Controller
@@ -60,12 +61,20 @@ class StudentDashboardController extends Controller
         ]);
     }
 
-    public function schedule(): \Illuminate\View\View
+    public function schedule(Request $request): \Illuminate\View\View
     {
         /** @var User $user */
         $user = Auth::user();
-        $enrolledCourses = $user->enrollments()->with('course')->get();
 
+        $statusFilter = $request->input('status', 'all');
+        $viewMode = $request->input('view', 'detailed');
+
+        $enrollmentsQuery = $user->enrollments()->with('course');
+        if ($statusFilter === 'active') {
+            $enrollmentsQuery->where('status', 'active');
+        }
+
+        $enrolledCourses = $enrollmentsQuery->get();
         $courseIds = $enrolledCourses->pluck('course_id')->toArray();
 
         $timetables = Timetable::with('teacherSubject.subject', 'teacherSubject.teacher')
@@ -82,7 +91,8 @@ class StudentDashboardController extends Controller
 
         return view('dashboards.student.schedule', [
             'enrolledCourses' => $enrolledCourses,
-            'timetables' => $timetables
+            'timetables' => $timetables,
+            'viewMode' => $viewMode,
         ]);
     }
 

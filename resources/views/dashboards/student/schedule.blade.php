@@ -6,26 +6,32 @@
 @section('content')
 <div class="schedule-page">
     <div class="dashboard-card filters-card">
-        <div class="filters-left">
-            <label class="field">
-                <span>Enrolled Courses</span>
-                <select>
-                    <option>All courses</option>
-                    <option>Active only</option>
-                </select>
-            </label>
-            <label class="field">
-                <span>View</span>
-                <select>
-                    <option>Detailed</option>
-                    <option>Compact</option>
-                </select>
-            </label>
-        </div>
-        <div class="filters-actions">
-            <a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary">My Subjects</a>
-            <a href="{{ route('dashboard.student.grades') }}" class="btn btn-secondary">My Grades</a>
-        </div>
+        <form method="GET" action="{{ route('dashboard.student.schedule') }}" class="filters-form">
+            <div class="filters-left">
+                <label class="field">
+                    <span>Enrolled Courses</span>
+                    <select name="status">
+                        <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>All courses</option>
+                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active only</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>View</span>
+                    <select name="view">
+                        <option value="detailed" {{ request('view', 'detailed') === 'detailed' ? 'selected' : '' }}>Detailed</option>
+                        <option value="compact" {{ request('view') === 'compact' ? 'selected' : '' }}>Compact</option>
+                    </select>
+                </label>
+                <div class="filters-actions">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <a href="{{ route('dashboard.student.schedule') }}" class="btn btn-secondary">Clear</a>
+                </div>
+            </div>
+            <div class="filters-actions">
+                <a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary">My Subjects</a>
+                <a href="{{ route('dashboard.student.grades') }}" class="btn btn-secondary">My Grades</a>
+            </div>
+        </form>
     </div>
 
     <div class="dashboard-card week-grid">
@@ -74,7 +80,7 @@
                 <p>No scheduled classes found for your enrolled courses.</p>
             </div>
         @else
-            <div class="schedule-grid">
+            <div class="schedule-grid {{ ($viewMode ?? request('view', 'detailed')) === 'compact' ? 'schedule-compact' : '' }}">
                 @php
                     $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                     $groupedTimetables = $timetables->groupBy('day_of_week');
@@ -167,6 +173,7 @@
 <style>
 .schedule-page { display: flex; flex-direction: column; gap: var(--spacing-lg); }
 .filters-card { display: flex; gap: var(--spacing-lg); justify-content: space-between; align-items: flex-end; }
+.filters-form { display: flex; gap: var(--spacing-lg); justify-content: space-between; align-items: flex-end; width: 100%; }
 .filters-left { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md); flex: 1; }
 .field { display: flex; flex-direction: column; gap: 6px; color: var(--text-dark-secondary); }
 .field select { padding: var(--spacing-sm) var(--spacing-md); background: var(--bg-dark); border: 1px solid var(--border-dark); border-radius: var(--radius-md); color: var(--text-dark); }
@@ -221,6 +228,19 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+}
+
+.schedule-compact .schedule-slot {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.8rem;
+}
+
+.schedule-compact .slot-time {
+    font-size: 0.75rem;
+}
+
+.schedule-compact .slot-subject {
+    font-size: 0.8rem;
 }
 
 .schedule-slot {
@@ -282,6 +302,7 @@
 
 @media (max-width: 960px) {
     .filters-card { flex-direction: column; align-items: stretch; }
+    .filters-form { flex-direction: column; align-items: stretch; }
     .week-row { grid-template-columns: repeat(2, 1fr); }
     .slot { grid-column: 1 / -1; }
     .timeline-row, .task-item { grid-template-columns: 1fr; }
