@@ -30,8 +30,17 @@ class TeacherDashboardController extends Controller
             return $subject->course?->enrollments->count() ?? 0;
         });
 
-        //average attendance rate (mock for now, needs attendance table)
-        $attendanceRate = 94;
+        $attendanceStats = Attendance::where('teacher_id', $user->id)
+            ->selectRaw("SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count")
+            ->selectRaw("SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count")
+            ->selectRaw('COUNT(*) as total_count')
+            ->first();
+
+        $attendedCount = ($attendanceStats->present_count ?? 0) + ($attendanceStats->late_count ?? 0);
+        $totalCount = $attendanceStats->total_count ?? 0;
+        $attendanceRate = $totalCount > 0
+            ? (int) round(($attendedCount / $totalCount) * 100)
+            : 0;
 
         $todayDay = now()->format('l');
         $todaySchedule = Timetable::whereHas('teacherSubject', function($query) use ($user) {
