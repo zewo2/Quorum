@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Room;
 use App\Models\Timetable;
 use App\Models\TeacherSubject;
 use App\Models\Subject;
@@ -61,8 +62,9 @@ class TimetableController extends Controller
             });
 
         $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $rooms = Room::orderBy('code')->get(['code', 'building']);
 
-        return view('admin.timetables.create', compact('teacherSubjects', 'daysOfWeek'));
+        return view('admin.timetables.create', compact('teacherSubjects', 'daysOfWeek', 'rooms'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -72,7 +74,7 @@ class TimetableController extends Controller
             'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'room' => 'nullable|string|max:50',
+            'room' => 'nullable|exists:rooms,code',
             'building' => 'nullable|string|max:100',
             'capacity' => 'nullable|integer|min:1|max:500',
         ]);
@@ -122,8 +124,9 @@ class TimetableController extends Controller
             });
 
         $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $rooms = Room::orderBy('code')->get(['code', 'building']);
 
-        return view('admin.timetables.edit', compact('timetable', 'teacherSubjects', 'daysOfWeek'));
+        return view('admin.timetables.edit', compact('timetable', 'teacherSubjects', 'daysOfWeek', 'rooms'));
     }
 
     public function update(Request $request, Timetable $timetable): RedirectResponse
@@ -133,7 +136,7 @@ class TimetableController extends Controller
             'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'room' => 'nullable|string|max:50',
+            'room' => 'nullable|exists:rooms,code',
             'building' => 'nullable|string|max:100',
             'capacity' => 'nullable|integer|min:1|max:500',
         ]);

@@ -31,6 +31,10 @@
 
 	<div class="exams-grid">
 		@forelse($enrolledCourses as $enrollment)
+			@php
+				$nextExam = $nextExamByCourse->get($enrollment->course_id);
+				$isUpcoming = $nextExam && $nextExam->exam_date->startOfDay()->gte($today);
+			@endphp
 			<div class="exam-card exam-{{ $enrollment->status }}">
 				<div class="card-header-exam">
 					<div>
@@ -71,6 +75,35 @@
 							<p class="detail-value">{{ Str::limit($enrollment->course->description, 50) }}</p>
 						</div>
 					</div>
+					<div class="detail-row">
+						<span class="detail-icon">🗓️</span>
+						<div>
+							<span class="detail-label">Next Exam</span>
+							@if($nextExam)
+								<p class="detail-value">
+									{{ $nextExam->subject?->name ?? 'Subject' }} • {{ $nextExam->exam_date->format('M d, Y') }}
+								</p>
+							@else
+								<p class="detail-value">No exam scheduled</p>
+							@endif
+						</div>
+					</div>
+					<div class="detail-row">
+						<span class="detail-icon">⏰</span>
+						<div>
+							<span class="detail-label">Exam Time</span>
+							@if($nextExam)
+								<p class="detail-value">
+									{{ $nextExam->start_time->format('H:i') }} - {{ $nextExam->end_time->format('H:i') }}
+									@if($nextExam->room)
+										• {{ $nextExam->room }}
+									@endif
+								</p>
+							@else
+								<p class="detail-value">TBA</p>
+							@endif
+						</div>
+					</div>
 				</div>
 
 				@if($enrollment->grade)
@@ -86,8 +119,8 @@
 				@else
 					<div class="prep-section">
 						<div class="prep-header">
-							<span class="prep-label">Status</span>
-							<span class="prep-percent">In Progress</span>
+							<span class="prep-label">Exam Status</span>
+							<span class="prep-percent">{{ $isUpcoming ? 'Upcoming' : 'TBA' }}</span>
 						</div>
 						<div class="prep-tips">
 							<a href="{{ route('dashboard.student.schedule') }}" class="action-link">View schedule →</a>

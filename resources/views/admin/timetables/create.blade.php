@@ -92,7 +92,14 @@
                 <div class="field-group">
                     <label class="field">
                         <span>Room</span>
-                        <input type="text" name="room" placeholder="e.g., 101, A-101" value="{{ isset($timetable) ? $timetable->room : '' }}" maxlength="50">
+                        <select name="room">
+                            <option value="">Select a room</option>
+                            @foreach($rooms as $room)
+                                <option value="{{ $room->code }}" {{ (isset($timetable) && $timetable->room === $room->code) ? 'selected' : '' }}>
+                                    {{ $room->code }}@if($room->building) • {{ $room->building }}@endif
+                                </option>
+                            @endforeach
+                        </select>
                         @error('room')
                             <span class="error">{{ $message }}</span>
                         @enderror

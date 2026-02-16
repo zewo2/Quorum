@@ -86,6 +86,28 @@
                             </svg>
                             <span>Timetables</span>
                         </a>
+                        <a href="{{ route('dashboard.admin.exams.index') }}" class="nav-item {{ request()->routeIs('dashboard.admin.exams.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <path d="M7 15h5"></path>
+                                <path d="M7 19h9"></path>
+                            </svg>
+                            <span>Exams</span>
+                        </a>
+                        <a href="{{ route('dashboard.admin.rooms.index') }}" class="nav-item {{ request()->routeIs('dashboard.admin.rooms.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 22V8l9-4 9 4v14"></path>
+                                <path d="M9 22v-6h6v6"></path>
+                                <path d="M7 10h2"></path>
+                                <path d="M15 10h2"></path>
+                                <path d="M7 14h2"></path>
+                                <path d="M15 14h2"></path>
+                            </svg>
+                            <span>Rooms</span>
+                        </a>
                         <a href="#" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 20V10"></path>

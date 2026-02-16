@@ -3,7 +3,9 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherSubjectController;
@@ -47,6 +49,8 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
             ->except(['show'])
             ->parameters(['teacher-subjects' => 'teacherSubject']);
         Route::resource('timetables', TimetableController::class)->parameters(['timetables' => 'timetable']);
+        Route::resource('exams', ExamController::class)->parameters(['exams' => 'exam']);
+        Route::resource('rooms', RoomController::class)->parameters(['rooms' => 'room']);
     });
 
     Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');

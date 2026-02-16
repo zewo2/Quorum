@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Exam;
 use App\Models\User;
 use App\Models\Timetable;
 use Illuminate\Http\Request;
@@ -161,8 +162,28 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
         $enrolledCourses = $user->enrollments()->with('course')->get();
 
+        $courseIds = $enrolledCourses->pluck('course_id')->toArray();
+        $today = now()->startOfDay();
+
+        $exams = Exam::with('subject.course')
+            ->whereHas('subject', function($query) use ($courseIds) {
+                $query->whereIn('course_id', $courseIds);
+            })
+            ->orderBy('exam_date')
+            ->orderBy('start_time')
+            ->get();
+
+        $nextExamByCourse = $exams
+            ->groupBy(fn($exam) => $exam->subject?->course_id)
+            ->map(function($list) use ($today) {
+                $upcoming = $list->first(fn($exam) => $exam->exam_date->startOfDay()->gte($today));
+                return $upcoming ?? $list->first();
+            });
+
         return view('dashboards.student.exams', [
-            'enrolledCourses' => $enrolledCourses
+            'enrolledCourses' => $enrolledCourses,
+            'nextExamByCourse' => $nextExamByCourse,
+            'today' => $today,
         ]);
     }
 }
