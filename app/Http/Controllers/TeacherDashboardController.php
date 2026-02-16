@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Attendance;
+use App\Models\Timetable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -32,8 +33,14 @@ class TeacherDashboardController extends Controller
         //average attendance rate (mock for now, needs attendance table)
         $attendanceRate = 94;
 
-        // Get today's schedule (mock - would need schedule table)
-        $todaySchedule = [];
+        $todayDay = now()->format('l');
+        $todaySchedule = Timetable::whereHas('teacherSubject', function($query) use ($user) {
+            $query->where('teacher_id', $user->id);
+        })
+            ->where('day_of_week', $todayDay)
+            ->with('teacherSubject.subject')
+            ->orderBy('start_time')
+            ->get();
 
         return view('dashboards.teacher.index', [
             'classCount' => $classCount,
@@ -59,6 +66,27 @@ class TeacherDashboardController extends Controller
 
         return view('dashboards.teacher.classes', [
             'teacherSubjects' => $teacherSubjects,
+        ]);
+    }
+
+    public function schedule(): View
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $timetables = Timetable::with('teacherSubject.subject')
+            ->whereHas('teacherSubject', function($query) use ($user) {
+                $query->where('teacher_id', $user->id);
+            })
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
+        $groupedByDay = $timetables->groupBy('day_of_week');
+
+        return view('dashboards.teacher.schedule', [
+            'timetables' => $timetables,
+            'groupedByDay' => $groupedByDay,
         ]);
     }
 

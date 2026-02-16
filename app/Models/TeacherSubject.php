@@ -33,4 +33,9 @@ class TeacherSubject extends Model
     {
         return $this->belongsTo(Subject::class);
     }
+
+    public function timetables()
+    {
+        return $this->hasMany(Timetable::class);
+    }
 }

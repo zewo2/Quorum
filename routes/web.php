@@ -8,6 +8,7 @@ use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherSubjectController;
 use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -45,10 +46,12 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
         Route::resource('teacher-subjects', TeacherSubjectController::class)
             ->except(['show'])
             ->parameters(['teacher-subjects' => 'teacherSubject']);
+        Route::resource('timetables', TimetableController::class)->parameters(['timetables' => 'timetable']);
     });
 
     Route::resource('teacher', TeacherDashboardController::class)->only(['index'])->names('teacher');
     Route::get('/teacher/classes', [TeacherDashboardController::class, 'classes'])->name('teacher.classes');
+    Route::get('/teacher/schedule', [TeacherDashboardController::class, 'schedule'])->name('teacher.schedule');
     Route::get('/teacher/attendance', [TeacherDashboardController::class, 'attendance'])->name('teacher.attendance');
     Route::post('/teacher/attendance', [TeacherDashboardController::class, 'storeAttendance'])->name('teacher.attendance.store');
 
@@ -57,6 +60,11 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::get('/student/subjects', [StudentDashboardController::class, 'subjects'])->name('student.subjects');
     Route::get('/student/grades', [StudentDashboardController::class, 'grades'])->name('student.grades');
     Route::get('/student/exams', [StudentDashboardController::class, 'exams'])->name('student.exams');
+});
+
+Route::prefix('api')->group(function () {
+    Route::get('/timetables/teacher/{teacher}', [TimetableController::class, 'byTeacher'])->name('api.timetables.teacher');
+    Route::middleware('auth')->get('/timetables/student', [TimetableController::class, 'byStudent'])->name('api.timetables.student');
 });
 
 Route::prefix('legal')->name('legal.')->group(function () {

@@ -78,6 +78,38 @@
 
 	<div class="dashboard-card card-full">
 		<div class="card-header">
+			<h3>Today's Schedule</h3>
+			<a href="{{ route('dashboard.student.schedule') }}" class="card-link">View full schedule →</a>
+		</div>
+		<div class="schedule-list">
+			@forelse($todaySchedule as $entry)
+				<div class="schedule-item">
+					<div class="schedule-details">
+						<h4>{{ $entry->teacherSubject?->subject?->name ?? 'Class' }}</h4>
+						<span class="schedule-room">
+							{{ $entry->start_time->format('H:i') }} - {{ $entry->end_time->format('H:i') }}
+							@if($entry->room)
+								• {{ $entry->room }}
+							@endif
+							@if($entry->building)
+								• {{ $entry->building }}
+							@endif
+						</span>
+					</div>
+					<div style="text-align: right;">
+						<span style="color: var(--text-dark-secondary); font-size: 0.875rem;">{{ $entry->teacherSubject?->teacher?->name ?? 'TBA' }}</span>
+					</div>
+				</div>
+			@empty
+				<div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
+					No classes scheduled for today
+				</div>
+			@endforelse
+		</div>
+	</div>
+
+	<div class="dashboard-card card-full">
+		<div class="card-header">
 			<h3>My Courses</h3>
 			<a href="{{ route('dashboard.student.subjects') }}" class="card-link">View all subjects →</a>
 		</div>

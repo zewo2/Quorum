@@ -20,7 +20,6 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        //this allows searching users
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -31,12 +30,10 @@ class UserController extends Controller
             });
         }
 
-        //filters by role
         if ($request->filled('role')) {
             $query->where('role', $request->role);
         }
 
-        //sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
@@ -56,14 +53,12 @@ class UserController extends Controller
         $validated = $request->validated();
         $validated['password'] = Hash::make($validated['password']);
 
-        // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
             $validated['profile_picture'] = $request->file('profile_picture')->store('profile_pictures', 'public');
         }
 
         $user = User::create($validated);
 
-        // Log activity
         $this->logActivity($user, 'created', 'User account created');
 
         return redirect()
@@ -89,7 +84,6 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        // Store old values for activity logging
         $oldValues = $user->only(['name', 'email', 'role', 'phone', 'address', 'date_of_birth', 'nif']);
 
         //this make it so the password is updated only if provided
@@ -99,9 +93,7 @@ class UserController extends Controller
             unset($validated['password']);
         }
 
-        // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
-            // Delete old picture if exists
             if ($user->profile_picture) {
                 Storage::disk('public')->delete($user->profile_picture);
             }
@@ -110,7 +102,6 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        // Log activity with changes
         $changes = [];
         foreach ($oldValues as $key => $oldValue) {
             if (isset($validated[$key]) && $validated[$key] != $oldValue) {
@@ -183,7 +174,6 @@ class UserController extends Controller
             case 'change_role':
                 User::whereIn('id', $userIds)->update(['role' => $request->role]);
 
-                // Log activities for affected users
                 $users = User::whereIn('id', $userIds)->get();
                 foreach ($users as $user) {
                     $this->logActivity(

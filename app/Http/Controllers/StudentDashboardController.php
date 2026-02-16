@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Timetable;
 use Illuminate\Support\Facades\Auth;
 
 class StudentDashboardController extends Controller
@@ -32,13 +33,30 @@ class StudentDashboardController extends Controller
 
         $activeEnrollments = $enrolledCourses->filter(fn($e) => $e->status === 'active')->count();
 
+        $courseIds = $enrolledCourses->pluck('course_id')->toArray();
+        $todayDay = now()->format('l');
+
+        $todaySchedule = Timetable::with('teacherSubject.subject', 'teacherSubject.teacher')
+            ->where('day_of_week', $todayDay)
+            ->whereHas('teacherSubject', function($query) use ($courseIds) {
+                $query->whereIn('subject_id', function($subQuery) use ($courseIds) {
+                    $subQuery->select('subject_id')
+                        ->from('subjects')
+                        ->whereIn('course_id', $courseIds);
+                });
+            })
+            ->orderBy('start_time')
+            ->take(3)
+            ->get();
+
         return view('dashboards.student.index', [
             'courseCount' => $courseCount,
             'totalCredits' => $totalCredits,
             'averageGrade' => $averageGrade,
             'gpa' => $gpa,
             'activeEnrollments' => $activeEnrollments,
-            'enrolledCourses' => $enrolledCourses
+            'enrolledCourses' => $enrolledCourses,
+            'todaySchedule' => $todaySchedule
         ]);
     }
 
@@ -48,8 +66,23 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
         $enrolledCourses = $user->enrollments()->with('course')->get();
 
+        $courseIds = $enrolledCourses->pluck('course_id')->toArray();
+
+        $timetables = Timetable::with('teacherSubject.subject', 'teacherSubject.teacher')
+            ->whereHas('teacherSubject', function($query) use ($courseIds) {
+                $query->whereIn('subject_id', function($subQuery) use ($courseIds) {
+                    $subQuery->select('subject_id')
+                        ->from('subjects')
+                        ->whereIn('course_id', $courseIds);
+                });
+            })
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
         return view('dashboards.student.schedule', [
-            'enrolledCourses' => $enrolledCourses
+            'enrolledCourses' => $enrolledCourses,
+            'timetables' => $timetables
         ]);
     }
 

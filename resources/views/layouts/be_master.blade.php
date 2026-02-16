@@ -77,7 +77,7 @@
                             </svg>
                             <span>Subjects</span>
                         </a>
-                        <a href="{{ route('dashboard.admin.timetables') }}" class="nav-item {{ request()->routeIs('dashboard.admin.timetables') ? 'active' : '' }}">
+                        <a href="{{ route('dashboard.admin.timetables.index') }}" class="nav-item {{ request()->routeIs('dashboard.admin.timetables.index') ? 'active' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -119,7 +119,7 @@
                             </svg>
                             <span>Attendance</span>
                         </a>
-                        <a href="{{ route('dashboard.student.schedule') }}" class="nav-item {{ request()->routeIs('dashboard.student.schedule') ? 'active' : '' }}" class="nav-item">
+                        <a href="{{ route('dashboard.teacher.schedule') }}" class="nav-item {{ request()->routeIs('dashboard.teacher.schedule') ? 'active' : '' }}" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <line x1="16" y1="2" x2="16" y2="6"></line>

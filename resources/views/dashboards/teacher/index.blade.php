@@ -55,33 +55,33 @@
 	<div class="dashboard-card card-full">
 		<div class="card-header">
 			<h3>Today's Schedule</h3>
-			<a href="#" class="card-link">Full schedule →</a>
+			<a href="{{ route('dashboard.teacher.schedule') }}" class="card-link">Full schedule →</a>
 		</div>
 		<div class="schedule-list">
-			<div class="schedule-item">
-				<div class="schedule-time">09:00 - 10:30</div>
-				<div class="schedule-details">
-					<h4>Web Development - Year 2</h4>
-					<span class="schedule-room">Room A-204 • 28 students</span>
+			@forelse($todaySchedule as $entry)
+				<div class="schedule-item">
+					<div class="schedule-time">
+						{{ $entry->start_time->format('H:i') }} - {{ $entry->end_time->format('H:i') }}
+					</div>
+					<div class="schedule-details">
+						<h4>{{ $entry->teacherSubject?->subject?->name ?? 'Class' }}</h4>
+						<span class="schedule-room">
+							{{ $entry->room ?? 'TBA' }}
+							@if($entry->building)
+								• {{ $entry->building }}
+							@endif
+						</span>
+					</div>
+					<a href="{{ route('dashboard.teacher.attendance', ['subject' => $entry->teacher_subject_id]) }}" class="schedule-action">Take Attendance</a>
 				</div>
-				<a href="#" class="schedule-action">Take Attendance</a>
-			</div>
-			<div class="schedule-item">
-				<div class="schedule-time">11:00 - 12:30</div>
-				<div class="schedule-details">
-					<h4>Database Systems - Year 3</h4>
-					<span class="schedule-room">Lab C-305 • 24 students</span>
+			@empty
+				<div class="schedule-item">
+					<div class="schedule-details">
+						<h4>No classes scheduled for today</h4>
+						<span class="schedule-room">Check your full schedule for upcoming sessions</span>
+					</div>
 				</div>
-				<a href="#" class="schedule-action">Take Attendance</a>
-			</div>
-			<div class="schedule-item">
-				<div class="schedule-time">14:00 - 15:30</div>
-				<div class="schedule-details">
-					<h4>Advanced Programming - Year 3</h4>
-					<span class="schedule-room">Room B-101 • 32 students</span>
-				</div>
-				<a href="#" class="schedule-action">Take Attendance</a>
-			</div>
+			@endforelse
 		</div>
 	</div>
 
