@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
 use App\Models\Exam;
 use App\Models\Room;
 use App\Models\Subject;
@@ -11,14 +12,42 @@ use Illuminate\View\View;
 
 class ExamController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $exams = Exam::with('subject.course')
-            ->orderBy('exam_date')
-            ->orderBy('start_time')
-            ->paginate(20);
+        $query = Exam::with('subject.course');
 
-        return view('admin.exams.index', compact('exams'));
+        if ($request->filled('course')) {
+            $query->whereHas('subject', function($q) use ($request) {
+                $q->where('course_id', $request->course);
+            });
+        }
+
+        if ($request->filled('subject')) {
+            $query->where('subject_id', $request->subject);
+        }
+
+        if ($request->filled('room')) {
+            $query->where('room', $request->room);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('exam_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('exam_date', '<=', $request->date_to);
+        }
+
+        $exams = $query->orderBy('exam_date')
+            ->orderBy('start_time')
+            ->paginate(20)
+            ->withQueryString();
+
+        $courses = Course::orderBy('name')->get(['id', 'name']);
+        $subjects = Subject::orderBy('name')->get(['id', 'name', 'course_id']);
+        $rooms = Room::orderBy('code')->get(['code', 'building', 'capacity']);
+
+        return view('admin.exams.index', compact('exams', 'courses', 'subjects', 'rooms'));
     }
 
     public function create(): View
