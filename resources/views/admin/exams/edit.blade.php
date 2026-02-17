@@ -35,8 +35,14 @@
                         <select name="subject_id" required>
                             <option value="">Select a subject</option>
                             @foreach($subjects as $subject)
+                                @php
+                                    $subjectCourses = $subject->courses?->pluck('name')->join(', ');
+                                    if (!$subjectCourses) {
+                                        $subjectCourses = 'N/A';
+                                    }
+                                @endphp
                                 <option value="{{ $subject->id }}" {{ $exam->subject_id == $subject->id ? 'selected' : '' }}>
-                                    {{ $subject->name }} ({{ $subject->course?->name ?? 'N/A' }})
+                                    {{ $subject->name }} ({{ $subjectCourses }})
                                 </option>
                             @endforeach
                         </select>

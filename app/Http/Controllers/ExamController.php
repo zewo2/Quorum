@@ -14,11 +14,13 @@ class ExamController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Exam::with('subject.course');
+        $query = Exam::with('subject.course', 'subject.courses');
 
         if ($request->filled('course')) {
             $query->whereHas('subject', function($q) use ($request) {
-                $q->where('course_id', $request->course);
+                $q->whereHas('courses', function ($courseQuery) use ($request) {
+                    $courseQuery->where('courses.id', $request->course);
+                });
             });
         }
 
@@ -44,7 +46,7 @@ class ExamController extends Controller
             ->withQueryString();
 
         $courses = Course::orderBy('name')->get(['id', 'name']);
-        $subjects = Subject::orderBy('name')->get(['id', 'name', 'course_id']);
+        $subjects = Subject::with('courses')->orderBy('name')->get(['id', 'name', 'course_id']);
         $rooms = Room::orderBy('code')->get(['code', 'building', 'capacity']);
 
         return view('admin.exams.index', compact('exams', 'courses', 'subjects', 'rooms'));
@@ -52,7 +54,7 @@ class ExamController extends Controller
 
     public function create(): View
     {
-        $subjects = Subject::with('course')->orderBy('name')->get();
+        $subjects = Subject::with('course', 'courses')->orderBy('name')->get();
         $rooms = Room::orderBy('code')->get(['code', 'building']);
 
         return view('admin.exams.create', compact('subjects', 'rooms'));
@@ -100,7 +102,7 @@ class ExamController extends Controller
 
     public function edit(Exam $exam): View
     {
-        $subjects = Subject::with('course')->orderBy('name')->get();
+        $subjects = Subject::with('course', 'courses')->orderBy('name')->get();
         $rooms = Room::orderBy('code')->get(['code', 'building']);
 
         return view('admin.exams.edit', compact('exam', 'subjects', 'rooms'));

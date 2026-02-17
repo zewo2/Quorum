@@ -85,23 +85,32 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="course_id">Course <span class="required">*</span></label>
-                        <select
-                            id="course_id"
-                            name="course_id"
-                            required
-                            class="@error('course_id') is-invalid @enderror"
-                        >
-                            <option value="">-- Select a Course --</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}" {{ old('course_id', $subject->course_id) == $course->id ? 'selected' : '' }}>
-                                    {{ $course->name }} ({{ $course->code }})
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('course_id')
+                        <label for="course_ids">Courses <span class="required">*</span></label>
+                        @php
+                            $selectedCourseIds = old('course_ids', $subject->courses->pluck('id')->all());
+                        @endphp
+                        <details class="courses-dropdown @error('course_ids') is-invalid @enderror" id="courseDropdownEdit">
+                            <summary>
+                                <span id="courseDropdownEditLabel">
+                                    {{ count($selectedCourseIds) > 0 ? count($selectedCourseIds) . ' course(s) selected' : 'Select one or more courses' }}
+                                </span>
+                            </summary>
+                            <div class="courses-options">
+                                @foreach($courses as $course)
+                                    <label class="course-option">
+                                        <input type="checkbox" name="course_ids[]" value="{{ $course->id }}" {{ in_array($course->id, $selectedCourseIds) ? 'checked' : '' }}>
+                                        <span>{{ $course->name }} ({{ $course->code }})</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </details>
+                        @error('course_ids')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
+                        @error('course_ids.*')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                        <small class="form-hint">Open the list and tick one or more courses.</small>
                     </div>
 
                     <div class="form-group">
@@ -237,6 +246,47 @@
     border-color: var(--danger);
 }
 
+.courses-dropdown {
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-md);
+    background: var(--bg-dark);
+}
+
+.courses-dropdown summary {
+    list-style: none;
+    cursor: pointer;
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-dark);
+}
+
+.courses-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.courses-dropdown[open] summary {
+    border-bottom: 1px solid var(--border-dark);
+}
+
+.courses-options {
+    max-height: 180px;
+    overflow: auto;
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.course-option {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+}
+
+.courses-dropdown.is-invalid {
+    border-color: var(--danger);
+}
+
 .error-message {
     color: var(--danger);
     font-size: 0.8125rem;
@@ -288,5 +338,26 @@
     background: rgba(255, 255, 255, 0.08);
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dropdown = document.getElementById('courseDropdownEdit');
+    const label = document.getElementById('courseDropdownEditLabel');
+    if (!dropdown || !label) return;
+
+    const updateLabel = () => {
+        const count = dropdown.querySelectorAll('input[type="checkbox"]:checked').length;
+        label.textContent = count > 0 ? `${count} course(s) selected` : 'Select one or more courses';
+    };
+
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.addEventListener('change', updateLabel);
+    });
+
+    updateLabel();
+});
+</script>
 @endpush
 @endsection

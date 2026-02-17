@@ -41,10 +41,10 @@ class StudentDashboardController extends Controller
         $todaySchedule = Timetable::with('teacherSubject.subject', 'teacherSubject.teacher')
             ->where('day_of_week', $todayDay)
             ->whereHas('teacherSubject', function($query) use ($courseIds) {
-                $query->whereIn('subject_id', function($subQuery) use ($courseIds) {
-                    $subQuery->select('subject_id')
-                        ->from('subjects')
-                        ->whereIn('course_id', $courseIds);
+                $query->whereHas('subject', function ($subjectQuery) use ($courseIds) {
+                    $subjectQuery->whereHas('courses', function ($courseQuery) use ($courseIds) {
+                        $courseQuery->whereIn('courses.id', $courseIds);
+                    });
                 });
             })
             ->orderBy('start_time')
@@ -80,10 +80,10 @@ class StudentDashboardController extends Controller
 
         $timetables = Timetable::with('teacherSubject.subject', 'teacherSubject.teacher')
             ->whereHas('teacherSubject', function($query) use ($courseIds) {
-                $query->whereIn('subject_id', function($subQuery) use ($courseIds) {
-                    $subQuery->select('subject_id')
-                        ->from('subjects')
-                        ->whereIn('course_id', $courseIds);
+                $query->whereHas('subject', function ($subjectQuery) use ($courseIds) {
+                    $subjectQuery->whereHas('courses', function ($courseQuery) use ($courseIds) {
+                        $courseQuery->whereIn('courses.id', $courseIds);
+                    });
                 });
             })
             ->orderBy('day_of_week')
@@ -165,20 +165,29 @@ class StudentDashboardController extends Controller
         $courseIds = $enrolledCourses->pluck('course_id')->toArray();
         $today = now()->startOfDay();
 
-        $exams = Exam::with('subject.course')
+        $exams = Exam::with('subject.course', 'subject.courses')
             ->whereHas('subject', function($query) use ($courseIds) {
-                $query->whereIn('course_id', $courseIds);
+                $query->whereHas('courses', function ($courseQuery) use ($courseIds) {
+                    $courseQuery->whereIn('courses.id', $courseIds);
+                });
             })
             ->orderBy('exam_date')
             ->orderBy('start_time')
             ->get();
 
-        $nextExamByCourse = $exams
-            ->groupBy(fn($exam) => $exam->subject?->course_id)
-            ->map(function($list) use ($today) {
-                $upcoming = $list->first(fn($exam) => $exam->exam_date->startOfDay()->gte($today));
-                return $upcoming ?? $list->first();
+        $nextExamByCourse = $enrolledCourses->mapWithKeys(function ($enrollment) use ($exams, $today) {
+            $courseId = $enrollment->course_id;
+            $courseExams = $exams->filter(function ($exam) use ($courseId) {
+                $subjectCourseIds = $exam->subject?->courses?->pluck('id')->all() ?? [];
+
+                return in_array($courseId, $subjectCourseIds);
             });
+
+            $selected = $courseExams->first(fn($exam) => $exam->exam_date->startOfDay()->gte($today))
+                ?? $courseExams->first();
+
+            return [$courseId => $selected];
+        });
 
         return view('dashboards.student.exams', [
             'enrolledCourses' => $enrolledCourses,

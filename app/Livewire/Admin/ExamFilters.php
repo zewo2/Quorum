@@ -44,19 +44,23 @@ class ExamFilters extends Component
     {
         $courses = Course::orderBy('name')->get(['id', 'name']);
 
-        $subjectsQuery = Subject::orderBy('name');
+        $subjectsQuery = Subject::with('courses')->orderBy('name');
         if ($this->course !== '') {
-            $subjectsQuery->where('course_id', $this->course);
+            $subjectsQuery->whereHas('courses', function ($query) {
+                $query->where('courses.id', $this->course);
+            });
         }
         $subjects = $subjectsQuery->get(['id', 'name', 'course_id']);
 
         $rooms = Room::orderBy('code')->get(['code', 'building', 'capacity']);
 
-        $examsQuery = Exam::with('subject.course');
+        $examsQuery = Exam::with('subject.course', 'subject.courses');
 
         if ($this->course !== '') {
             $examsQuery->whereHas('subject', function ($query) {
-                $query->where('course_id', $this->course);
+                $query->whereHas('courses', function ($courseQuery) {
+                    $courseQuery->where('courses.id', $this->course);
+                });
             });
         }
 

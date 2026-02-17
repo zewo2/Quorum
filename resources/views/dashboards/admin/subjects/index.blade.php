@@ -131,8 +131,19 @@
                             </td>
                             <td>{{ $subject->code }}</td>
                             <td>
-                                <span class="badge badge-info">{{ $subject->course->code }}</span>
-                                <small style="color: var(--text-dark-secondary); display: block; margin-top: 4px;">{{ $subject->course->name }}</small>
+                                @php
+                                    $subjectCourses = $subject->courses;
+                                @endphp
+                                @if($subjectCourses->isNotEmpty())
+                                    @foreach($subjectCourses as $course)
+                                        <span class="badge badge-info" style="margin-right: 4px; margin-bottom: 4px;">{{ $course->code }}</span>
+                                    @endforeach
+                                    <small style="color: var(--text-dark-secondary); display: block; margin-top: 4px;">
+                                        {{ $subjectCourses->pluck('name')->join(', ') }}
+                                    </small>
+                                @else
+                                    <small style="color: var(--text-dark-secondary);">N/A</small>
+                                @endif
                             </td>
                             <td>
                                 <span class="credits-badge">{{ $subject->credits }}</span>

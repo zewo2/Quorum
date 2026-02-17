@@ -12,6 +12,7 @@ class Timetable extends Model
     protected $fillable = [
         'teacher_subject_id',
         'day_of_week',
+        'class_date',
         'start_time',
         'end_time',
         'room',
@@ -20,6 +21,7 @@ class Timetable extends Model
     ];
 
     protected $casts = [
+        'class_date' => 'date',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
     ];

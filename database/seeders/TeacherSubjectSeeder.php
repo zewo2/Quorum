@@ -97,6 +97,32 @@ class TeacherSubjectSeeder extends Seeder
             ]);
         }
 
+        // Assign CS302 subjects
+        $cs302L1 = Subject::where('code', 'CS302-L1')->first();
+        $cs302L2 = Subject::where('code', 'CS302-L2')->first();
+
+        if ($john && $cs302L1) {
+            TeacherSubject::create([
+                'teacher_id' => $john->id,
+                'subject_id' => $cs302L1->id,
+                'academic_year' => 2025,
+                'semester' => 2,
+                'class_capacity' => 45,
+                'status' => 'active',
+            ]);
+        }
+
+        if ($sarah && $cs302L2) {
+            TeacherSubject::create([
+                'teacher_id' => $sarah->id,
+                'subject_id' => $cs302L2->id,
+                'academic_year' => 2025,
+                'semester' => 2,
+                'class_capacity' => 45,
+                'status' => 'active',
+            ]);
+        }
+
         // Assign remaining teachers to random subjects
         $remainingTeachers = $teachers->filter(function($teacher) use ($john, $sarah) {
             return $teacher->id !== $john?->id && $teacher->id !== $sarah?->id;

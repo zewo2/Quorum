@@ -21,8 +21,11 @@
                     <span>Class</span>
                     <select name="subject_select" onchange="updateFilters()">
                         @forelse($teacherSubjects as $subject)
+                            @php
+                                $subjectCourses = $subject->courses;
+                            @endphp
                             <option value="{{ $subject->id }}" {{ $selectedSubject?->id === $subject->id ? 'selected' : '' }}>
-                                {{ $subject->name }} • {{ $subject->course->name ?? 'General' }}
+                                {{ $subject->name }} • {{ $subjectCourses->pluck('name')->join(', ') ?: 'General' }}
                             </option>
                         @empty
                             <option disabled>No classes available</option>
@@ -78,7 +81,7 @@
                         <span class="legend-label">Present</span>
                         <br>
                         <span class="badge badge-warning">L</span>
-                        <span class="legend-label">Late</span>
+                                    <td>{{ $enrollment->course?->name ?? 'General' }}</td>
                         <br>
                         <span class="badge badge-absent">A</span>
                         <span class="legend-label">Absent</span>
@@ -113,7 +116,7 @@
                                         </div>
                                     </td>
                                     <td>{{ $enrollment->user->student_id ?? 'N/A' }}</td>
-                                    <td>{{ $selectedSubject->course->name ?? 'General' }}</td>
+                                    <td>{{ $enrollment->course?->name ?? 'General' }}</td>
                                     <td>
                                         <input type="hidden" name="attendance[{{ $loop->index }}][enrollment_id]" value="{{ $enrollment->id }}">
                                         <div class="status-toggle" data-enrollment="{{ $enrollment->id }}">

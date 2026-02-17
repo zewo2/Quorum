@@ -92,10 +92,15 @@
 		</div>
 		<div class="classes-list">
 			@forelse($teacherSubjects as $subject)
+				@php
+					$subjectCourses = $subject->courses;
+					$courseNames = $subjectCourses->pluck('name')->join(', ');
+					$subjectStudents = $subjectCourses->sum(fn($course) => $course->enrollments->count());
+				@endphp
 				<div class="class-item">
 					<div class="class-info">
 						<h4>{{ $subject->name }}</h4>
-						<span class="class-meta">{{ $subject->course->name ?? 'General' }} • {{ $subject->course?->enrollments->count() ?? 0 }} students</span>
+						<span class="class-meta">{{ $courseNames ?: 'General' }} • {{ $subjectStudents }} students</span>
 					</div>
 				</div>
 			@empty

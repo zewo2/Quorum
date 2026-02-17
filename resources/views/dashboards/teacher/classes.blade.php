@@ -28,15 +28,20 @@
 
     <div class="dashboard-grid cards-grid">
         @forelse($teacherSubjects as $subject)
+            @php
+                $subjectCourses = $subject->courses;
+                $courseNames = $subjectCourses->pluck('name')->join(', ');
+                $studentCount = $subjectCourses->sum(fn($course) => $course->enrollments->count());
+            @endphp
             <div class="dashboard-card class-card">
                 <div class="card-header">
                     <div>
                         <p class="eyebrow">{{ $subject->code ?? 'N/A' }} • {{ $subject->pivot->academic_year ?? 'Current' }}</p>
                         <h3>{{ $subject->name }}</h3>
                     </div>
-                    <span class="badge badge-success">{{ $subject->course?->enrollments->count() ?? 0 }} students</span>
+                    <span class="badge badge-success">{{ $studentCount }} students</span>
                 </div>
-                <p class="card-sub">{{ $subject->course->name ?? 'General Subjects' }}</p>
+                <p class="card-sub">{{ $courseNames ?: 'General Subjects' }}</p>
                 <div class="meta-row">
                     <div class="meta">
                         <span>Capacity</span>
@@ -71,11 +76,15 @@
             </div>
             <div class="schedule-list">
                 @forelse($teacherSubjects->slice(0, 2) as $subject)
+                    @php
+                        $subjectCourses = $subject->courses;
+                        $studentCount = $subjectCourses->sum(fn($course) => $course->enrollments->count());
+                    @endphp
                     <div class="schedule-item">
                         <div class="schedule-time">TBD</div>
                         <div class="schedule-body">
                             <p class="item-title">{{ $subject->name }}</p>
-                            <span class="item-sub">{{ $subject->course?->enrollments->count() ?? 0 }} students</span>
+                            <span class="item-sub">{{ $studentCount }} students</span>
                         </div>
                         <div class="row-actions">
                             <a href="{{ route('dashboard.teacher.attendance') }}" class="btn btn-secondary">Attendance</a>

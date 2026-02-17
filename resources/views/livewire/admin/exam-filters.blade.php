@@ -80,7 +80,15 @@
                     @forelse($exams as $exam)
                         <tr>
                             <td><strong>{{ $exam->subject?->name ?? 'N/A' }}</strong></td>
-                            <td>{{ $exam->subject?->course?->name ?? 'N/A' }}</td>
+                            <td>
+                                @php
+                                    $examCourseNames = $exam->subject?->courses?->pluck('name')->join(', ');
+                                    if (!$examCourseNames) {
+                                        $examCourseNames = 'N/A';
+                                    }
+                                @endphp
+                                {{ $examCourseNames }}
+                            </td>
                             <td>{{ $exam->exam_date->format('M d, Y') }}</td>
                             <td>
                                 <span class="badge">

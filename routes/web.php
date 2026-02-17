@@ -11,6 +11,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherSubjectController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\TimetableGaController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,9 @@ Route::prefix('dashboard')->name('dashboard.')->group(function () {
         Route::resource('teacher-subjects', TeacherSubjectController::class)
             ->except(['show'])
             ->parameters(['teacher-subjects' => 'teacherSubject']);
+        Route::get('timetables/ga', [TimetableGaController::class, 'index'])->name('timetables.ga');
+        Route::post('timetables/ga/generate', [TimetableGaController::class, 'generate'])->name('timetables.ga.generate');
+        Route::post('timetables/ga/apply', [TimetableGaController::class, 'apply'])->name('timetables.ga.apply');
         Route::resource('timetables', TimetableController::class)->parameters(['timetables' => 'timetable']);
         Route::resource('exams', ExamController::class)->parameters(['exams' => 'exam']);
         Route::resource('rooms', RoomController::class)->parameters(['rooms' => 'room']);

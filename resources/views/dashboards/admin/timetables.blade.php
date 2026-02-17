@@ -226,7 +226,7 @@
 					<span>Improvements</span>
 					<strong>23 conflicts resolved</strong>
 				</div>
-				<button class="btn btn-primary btn-block" style="margin-top: var(--spacing-lg);">Run Optimization Again</button>
+				<a href="{{ route('dashboard.admin.timetables.ga') }}" class="btn btn-primary btn-block" style="margin-top: var(--spacing-lg);">Run Optimization Again</a>
 			</div>
 		</div>
 

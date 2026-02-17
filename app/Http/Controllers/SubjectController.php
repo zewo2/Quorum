@@ -13,7 +13,7 @@ class SubjectController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Subject::with('course');
+        $query = Subject::with('course', 'courses');
 
         // Search filter
         if ($request->filled('search')) {
@@ -26,7 +26,9 @@ class SubjectController extends Controller
 
         // Course filter
         if ($request->filled('course')) {
-            $query->where('course_id', $request->course);
+            $query->whereHas('courses', function ($q) use ($request) {
+                $q->where('courses.id', $request->course);
+            });
         }
 
         $subjects = $query->orderBy('name')->paginate(15)->withQueryString();
@@ -67,10 +69,19 @@ class SubjectController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'credits' => ['required', 'integer', 'min:1', 'max:20'],
-            'course_id' => ['required', 'exists:courses,id'],
+            'course_ids' => ['required', 'array', 'min:1'],
+            'course_ids.*' => ['integer', 'exists:courses,id'],
         ]);
 
-        Subject::create($validated);
+        $subject = Subject::create([
+            'code' => $validated['code'],
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'credits' => $validated['credits'],
+            'course_id' => $validated['course_ids'][0],
+        ]);
+
+        $subject->courses()->sync($validated['course_ids']);
 
         return redirect()
             ->route('dashboard.admin.subjects.index')
@@ -82,6 +93,7 @@ class SubjectController extends Controller
      */
     public function edit(Subject $subject)
     {
+        $subject->load('courses');
         $courses = Course::orderBy('name')->get();
         return view('dashboards.admin.subjects.edit', compact('subject', 'courses'));
     }
@@ -96,10 +108,19 @@ class SubjectController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'credits' => ['required', 'integer', 'min:1', 'max:20'],
-            'course_id' => ['required', 'exists:courses,id'],
+            'course_ids' => ['required', 'array', 'min:1'],
+            'course_ids.*' => ['integer', 'exists:courses,id'],
         ]);
 
-        $subject->update($validated);
+        $subject->update([
+            'code' => $validated['code'],
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'credits' => $validated['credits'],
+            'course_id' => $validated['course_ids'][0],
+        ]);
+
+        $subject->courses()->sync($validated['course_ids']);
 
         return redirect()
             ->route('dashboard.admin.subjects.index')

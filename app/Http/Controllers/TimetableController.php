@@ -15,41 +15,7 @@ class TimetableController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Timetable::with('teacherSubject.teacher', 'teacherSubject.subject');
-
-        if ($request->filled('day')) {
-            $query->where('day_of_week', $request->day);
-        }
-
-        if ($request->filled('teacher')) {
-            $query->whereHas('teacherSubject', function($q) use ($request) {
-                $q->where('teacher_id', $request->teacher);
-            });
-        }
-
-        if ($request->filled('subject')) {
-            $query->whereHas('teacherSubject', function($q) use ($request) {
-                $q->where('subject_id', $request->subject);
-            });
-        }
-
-        if ($request->filled('room')) {
-            $query->where('room', 'like', '%' . $request->room . '%');
-        }
-
-        $timetables = $query->orderBy('day_of_week')
-            ->orderBy('start_time')
-            ->paginate(20)
-            ->withQueryString();
-
-        $teachers = \App\Models\User::where('role', 'teacher')
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        $subjects = \App\Models\Subject::orderBy('name')
-            ->get(['id', 'name']);
-
-        return view('admin.timetables.index', compact('timetables', 'teachers', 'subjects'));
+        return view('admin.timetables.index');
     }
 
     public function create(): View

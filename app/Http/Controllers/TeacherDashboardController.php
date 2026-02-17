@@ -22,12 +22,16 @@ class TeacherDashboardController extends Controller
         $user = Auth::user();
 
         $teacherSubjects = $user->subjectsTaught()
-            ->with('course.enrollments')
+            ->with('course.enrollments', 'courses.enrollments')
             ->get();
 
         $classCount = $teacherSubjects->count();
         $totalStudents = $teacherSubjects->sum(function ($subject) {
-            return $subject->course?->enrollments->count() ?? 0;
+            $courses = $subject->courses;
+
+            return $courses->sum(function ($course) {
+                return $course->enrollments->count();
+            });
         });
 
         $attendanceStats = Attendance::where('teacher_id', $user->id)
@@ -70,7 +74,7 @@ class TeacherDashboardController extends Controller
         $user = Auth::user();
 
         $teacherSubjects = $user->subjectsTaught()
-            ->with('course.enrollments')
+            ->with('course.enrollments', 'courses.enrollments')
             ->get();
 
         return view('dashboards.teacher.classes', [
@@ -112,16 +116,18 @@ class TeacherDashboardController extends Controller
         $session = $request->input('session', 'session_1');
 
         $teacherSubjects = $user->subjectsTaught()
-            ->with('course')
+            ->with('course', 'courses')
             ->get();
 
         $subjectId = $request->input('subject', $teacherSubjects->first()?->id);
         $selectedSubject = $teacherSubjects->firstWhere('id', $subjectId);
 
         $enrollments = collect();
-        if ($selectedSubject && $selectedSubject->course) {
-            $enrollments = $selectedSubject->course->enrollments()
-                ->with(['user', 'attendances' => function($query) use ($date, $session) {
+        if ($selectedSubject) {
+            $courseIds = $selectedSubject->courses->pluck('id')->all();
+
+            $enrollments = \App\Models\Enrollment::whereIn('course_id', $courseIds)
+                ->with(['course', 'user', 'attendances' => function($query) use ($date, $session) {
                     $query->where('date', $date)
                           ->where('session', $session);
                 }])
