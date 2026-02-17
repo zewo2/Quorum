@@ -8,46 +8,9 @@ use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
-    /**
-     * Display a listing of subjects.
-     */
-    public function index(Request $request)
+    public function index()
     {
-        $query = Subject::with('course', 'courses');
-
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
-            });
-        }
-
-        // Course filter
-        if ($request->filled('course')) {
-            $query->whereHas('courses', function ($q) use ($request) {
-                $q->where('courses.id', $request->course);
-            });
-        }
-
-        $subjects = $query->orderBy('name')->paginate(15)->withQueryString();
-
-        // Get all courses for filter dropdown
-        $courses = Course::select('id', 'name', 'code')->orderBy('name')->get();
-
-        // Stats
-        $totalSubjects = Subject::count();
-        $totalCredits = Subject::sum('credits');
-        $courseCount = Course::count();
-
-        return view('dashboards.admin.subjects.index', compact(
-            'subjects',
-            'courses',
-            'totalSubjects',
-            'totalCredits',
-            'courseCount'
-        ));
+        return view('dashboards.admin.subjects.index');
     }
 
     /**

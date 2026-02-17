@@ -7,36 +7,63 @@
 <div class="admin-page">
     @if(session('success'))
         <div class="alert alert-success">
-            {{ session('success') }}
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>{{ session('success') }}</span>
         </div>
     @endif
 
     @if($errors->any())
         <div class="alert alert-danger">
-            @foreach($errors->all() as $error)
-                <div>{{ $error }}</div>
-            @endforeach
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div>
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
         </div>
     @endif
 
     <div class="page-header">
         <div>
-            <h1>Genetic Algorithm Scheduling</h1>
-            <p>Generate month-wide schedules for selected courses and selected classes.</p>
+            <h1>Genetic Algorithm Scheduler</h1>
+            <p>Generate optimal month-wide schedules using AI</p>
         </div>
-        <a href="{{ route('dashboard.admin.timetables.index') }}" class="btn btn-secondary">Back to Timetables</a>
+        <a href="{{ route('dashboard.admin.timetables.index') }}" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Timetables
+        </a>
     </div>
 
     <div class="dashboard-card">
         <div class="card-header">
-            <h3>Generation Setup</h3>
+            <h3>Schedule Parameters</h3>
         </div>
-        <div class="card-body" style="padding: 1rem 1.5rem;">
-            <p><strong>Days:</strong> Monday to Saturday</p>
-            <p><strong>Slots:</strong> 09:00-11:00, 11:00-13:00, 14:00-16:00, 16:00-18:00</p>
-            <p><strong>ECTS Rule:</strong> 3 ECTS = 50h, 6 ECTS = 100h (others scaled proportionally).</p>
+        <div class="card-body">
+            <div class="setup-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem;">
+                    <p style="color: var(--text-dark-secondary); font-size: 0.875rem; margin: 0 0 0.25rem 0; text-transform: uppercase; letter-spacing: 0.05em;">Schedule Days</p>
+                    <p style="color: var(--text-dark); font-weight: 600; margin: 0;">Monday - Saturday</p>
+                </div>
+                <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.5rem;">
+                    <p style="color: var(--text-dark-secondary); font-size: 0.875rem; margin: 0 0 0.25rem 0; text-transform: uppercase; letter-spacing: 0.05em;">Time Slots</p>
+                    <p style="color: var(--text-dark); font-weight: 600; margin: 0;">4 slots/day (2h each)</p>
+                </div>
+                <div style="padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 0.5rem;">
+                    <p style="color: var(--text-dark-secondary); font-size: 0.875rem; margin: 0 0 0.25rem 0; text-transform: uppercase; letter-spacing: 0.05em;">ECTS Rule</p>
+                    <p style="color: var(--text-dark); font-weight: 600; margin: 0;">50h per 3 ECTS</p>
+                </div>
+            </div>
 
-            <form method="POST" action="{{ route('dashboard.admin.timetables.ga.generate') }}" style="margin-top: 1rem; display: grid; gap: 1rem;">
+            <form method="POST" action="{{ route('dashboard.admin.timetables.ga.generate') }}" style="display: grid; gap: 1rem;">
                 @csrf
                 <label class="field">
                     <span>Month</span>
@@ -82,7 +109,7 @@
                                 {{ count($checkedClasses) > 0 ? count($checkedClasses) . ' class(es) selected' : 'Select classes (optional)' }}
                             </span>
                         </summary>
-                        <div id="ga-classes-container" class="class-options">
+                        <div id="ga-classes-container" class="courses-options">
                             @foreach($teacherSubjects as $teacherSubject)
                                 @php
                                     $meta = $hoursMeta[$teacherSubject->id] ?? null;

@@ -177,6 +177,15 @@
 .filters-left { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md); flex: 1; }
 .field { display: flex; flex-direction: column; gap: 6px; color: var(--text-dark-secondary); }
 .field select { padding: var(--spacing-sm) var(--spacing-md); background: var(--bg-dark); border: 1px solid var(--border-dark); border-radius: var(--radius-md); color: var(--text-dark); }
+.field select option {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    padding: 8px;
+}
+.field select option:checked {
+    background: var(--primary);
+    color: white;
+}
 .filters-actions { display: flex; gap: var(--spacing-md); }
 
 .week-grid { display: flex; flex-direction: column; gap: var(--spacing-md); }

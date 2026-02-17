@@ -263,6 +263,17 @@
     background: var(--bg-dark);
 }
 
+.form-group select option {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    padding: 8px;
+}
+
+.form-group select option:checked {
+    background: var(--primary);
+    color: white;
+}
+
 .form-group input.is-invalid,
 .form-group textarea.is-invalid,
 .form-group select.is-invalid {

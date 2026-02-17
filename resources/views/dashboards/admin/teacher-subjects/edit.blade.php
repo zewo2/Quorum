@@ -126,6 +126,17 @@
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
+.form-group select option {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    padding: 8px;
+}
+
+.form-group select option:checked {
+    background: var(--primary);
+    color: white;
+}
+
 .error-message { color: var(--danger); font-size: 0.9rem; }
 .form-actions { display: flex; gap: var(--spacing-md); justify-content: flex-end; }
 

@@ -9,37 +9,9 @@ use Illuminate\View\View;
 
 class RoomController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $query = Room::query();
-
-        if ($request->filled('q')) {
-            $query->where('code', 'like', '%' . $request->q . '%');
-        }
-
-        if ($request->filled('building')) {
-            $query->where('building', $request->building);
-        }
-
-        if ($request->filled('capacity_min')) {
-            $query->where('capacity', '>=', (int) $request->capacity_min);
-        }
-
-        if ($request->filled('capacity_max')) {
-            $query->where('capacity', '<=', (int) $request->capacity_max);
-        }
-
-        $rooms = $query->orderBy('code')
-            ->paginate(20)
-            ->withQueryString();
-
-        $buildings = Room::whereNotNull('building')
-            ->where('building', '!=', '')
-            ->distinct()
-            ->orderBy('building')
-            ->pluck('building');
-
-        return view('admin.rooms.index', compact('rooms', 'buildings'));
+        return view('admin.rooms.index');
     }
 
     public function create(): View

@@ -10,53 +10,9 @@ use Illuminate\Validation\Rule;
 
 class TeacherSubjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function index()
     {
-        $query = TeacherSubject::with(['teacher', 'subject']);
-
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('teacher', function ($teacherQuery) use ($search) {
-                    $teacherQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                })->orWhereHas('subject', function ($subjectQuery) use ($search) {
-                    $subjectQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                });
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        if ($request->filled('academic_year')) {
-            $query->where('academic_year', $request->get('academic_year'));
-        }
-
-        if ($request->filled('teacher_id')) {
-            $query->where('teacher_id', $request->get('teacher_id'));
-        }
-
-        if ($request->filled('subject_id')) {
-            $query->where('subject_id', $request->get('subject_id'));
-        }
-
-        $assignments = $query
-            ->orderByDesc('academic_year')
-            ->orderBy('semester')
-            ->paginate(15)
-            ->withQueryString();
-
-        $subjects = Subject::orderBy('name')->get();
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $statuses = ['active', 'inactive'];
-
-        return view('dashboards.admin.teacher-subjects.index', compact('assignments', 'subjects', 'teachers', 'statuses'));
+        return view('dashboards.admin.teacher-subjects.index');
     }
 
     /**
