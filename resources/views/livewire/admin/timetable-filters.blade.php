@@ -1,13 +1,30 @@
 <div>
+    @if(session('success'))
+        <div class="alert alert-success" style="margin-bottom: 1rem;">
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger" style="margin-bottom: 1rem;">
+            <span>{{ session('error') }}</span>
+        </div>
+    @endif
+
     <div class="dashboard-card filters-card" style="margin-bottom: 0.5cm;">
         <div class="filters-form">
             <div class="filters-row">
                 <label class="field">
-                    <span>Day of Week</span>
-                    <select wire:model.live="day">
-                        <option value="">All Days</option>
-                        @foreach($days as $dayOption)
-                            <option value="{{ $dayOption }}">{{ $dayOption }}</option>
+                    <span>Month</span>
+                    <input type="month" wire:model.live="month">
+                </label>
+
+                <label class="field">
+                    <span>Course</span>
+                    <select wire:model.live="courseId">
+                        <option value="">Select course</option>
+                        @foreach($courses as $course)
+                            <option value="{{ $course->id }}">{{ $course->name }} ({{ $course->code }})</option>
                         @endforeach
                     </select>
                 </label>
@@ -32,13 +49,25 @@
                     </select>
                 </label>
 
-                <label class="field">
-                    <span>Room</span>
-                    <input type="text" wire:model.live="room" placeholder="Search by room">
-                </label>
-
                 <div class="filters-actions">
-                    <button type="button" wire:click="resetFilters" class="btn btn-secondary">Clear</button>
+                    <button type="button" wire:click="resetFilters" class="btn btn-secondary">Reset Filters</button>
+                    <button
+                        type="button"
+                        wire:click="clearSelectedCourseSchedule"
+                        class="btn btn-danger btn-critical"
+                        @disabled(!$courseId)
+                        onclick="confirm('Delete all timetable entries for the selected course?') || event.stopImmediatePropagation()"
+                    >
+                        Delete Schedule
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="clearAllSchedules"
+                        class="btn btn-danger btn-critical btn-critical-all"
+                        onclick="confirm('Delete ALL timetable entries for every course? This cannot be undone.') || event.stopImmediatePropagation()"
+                    >
+                        Delete All
+                    </button>
                 </div>
             </div>
         </div>
@@ -47,9 +76,14 @@
     <div class="dashboard-card">
         <div class="card-header">
             <h3>Weekly Schedule View</h3>
-            <span class="chip">{{ $timetables->total() }} entries</span>
+            <span class="chip">{{ $entryCount }} entries</span>
         </div>
 
+        @if(!$showCalendar)
+            <div class="empty-calendar-state">
+                <p>Select a course to display the calendar.</p>
+            </div>
+        @else
         <div class="calendar-wrapper">
             @php
                 $timeSlots = [
@@ -66,102 +100,134 @@
                     '18:00' => '18:00 - 19:00',
                     '19:00' => '19:00 - 20:00',
                 ];
-                $daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                $weekDates = $weekDates ?? collect();
+                $hasData = $entryCount > 0;
 
-                // Group timetables by day and time
-                $scheduleGrid = [];
-                foreach($timetables as $entry) {
-                    $day = $entry->day_of_week;
-                    $startTime = substr($entry->start_time, 0, 5);
-
-                    if (!isset($scheduleGrid[$day])) {
-                        $scheduleGrid[$day] = [];
+                // Group timetables by date and time
+                $scheduleByDateTime = [];
+                foreach($groupedByDate as $dateKey => $dateEntries) {
+                    // Normalize the date key to YYYY-MM-DD format
+                    $normalizedKey = \Carbon\Carbon::parse($dateKey)->toDateString();
+                    $scheduleByDateTime[$normalizedKey] = [];
+                    foreach($dateEntries as $entry) {
+                        $startTime = substr($entry->start_time, 0, 5); // e.g., "11:00" from "11:00:00"
+                        if (!isset($scheduleByDateTime[$normalizedKey][$startTime])) {
+                            $scheduleByDateTime[$normalizedKey][$startTime] = [];
+                        }
+                        $scheduleByDateTime[$normalizedKey][$startTime][] = $entry;
                     }
-                    if (!isset($scheduleGrid[$day][$startTime])) {
-                        $scheduleGrid[$day][$startTime] = [];
-                    }
-                    $scheduleGrid[$day][$startTime][] = $entry;
                 }
             @endphp
 
-            <div class="calendar-grid">
-                <div class="time-column">
-                    <div class="calendar-header-cell">Time</div>
-                    @foreach($timeSlots as $time => $label)
-                        <div class="time-cell">{{ $label }}</div>
-                    @endforeach
+            @if(!$hasData)
+                <div class="empty-calendar-state">
+                    <p>No schedule entries found for the selected criteria.</p>
                 </div>
-
-                @foreach($daysOfWeek as $day)
-                    <div class="day-column">
-                        <div class="calendar-header-cell">{{ $day }}</div>
+            @else
+                <div class="calendar-grid" style="grid-template-columns: 84px repeat({{ max($weekDates->count(), 1) }}, 1fr);">
+                    <div class="time-column">
+                        <div class="calendar-header-cell">Time</div>
                         @foreach($timeSlots as $time => $label)
-                            <div class="schedule-cell">
-                                @if(isset($scheduleGrid[$day][$time]))
-                                    @foreach($scheduleGrid[$day][$time] as $entry)
-                                        <div class="schedule-event">
-                                            <div class="event-header">
-                                                <strong class="event-subject">{{ $entry->teacherSubject?->subject?->name ?? 'N/A' }}</strong>
-                                                <div class="event-actions">
-                                                    <a href="{{ route('dashboard.admin.timetables.edit', $entry) }}" class="event-action-btn" title="Edit">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                        </svg>
-                                                    </a>
-                                                    <form action="{{ route('dashboard.admin.timetables.destroy', $entry) }}" method="POST" style="display: inline; margin: 0;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="event-action-btn event-action-btn-danger" title="Delete" onclick="return confirm('Delete this entry?')">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                            <div class="event-details">
-                                                <div class="event-info">
-                                                    <span class="event-teacher">{{ $entry->teacherSubject?->teacher?->name ?? 'N/A' }}</span>
-                                                    <span class="event-room">{{ $entry->room ?? 'Room TBD' }} {{ $entry->building ? '(' . $entry->building . ')' : '' }}</span>
-                                                </div>
-                                                @if($entry->capacity)
-                                                    <span class="event-capacity">Cap: {{ $entry->capacity }}</span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @endif
-                            </div>
+                            <div class="time-cell">{{ $label }}</div>
                         @endforeach
                     </div>
-                @endforeach
-            </div>
 
-            @if($timetables->isEmpty())
-                <div class="empty-calendar-state">
-                    <p>No schedule entries found. Try adjusting your filters or add new entries.</p>
+                    @foreach($weekDates as $date)
+                        @php
+                            $dateString = $date->toDateString();
+                            $dayName = $date->format('l'); // Full day name: Monday, Tuesday, etc.
+                            $dayNum = $date->format('j'); // Day of month: 1, 2, 3, etc.
+                        @endphp
+                        <div class="day-column">
+                            <div class="calendar-header-cell">
+                                <span class="day-name">{{ $dayName }}</span>
+                                <span class="day-num">{{ $dayNum }}</span>
+                            </div>
+                            @foreach($timeSlots as $time => $label)
+                                <div class="schedule-cell">
+                                    @if(isset($scheduleByDateTime[$dateString][$time]))
+                                        @foreach($scheduleByDateTime[$dateString][$time] as $entry)
+                                            <div class="schedule-event">
+                                                <div class="event-header">
+                                                    <strong class="event-subject">{{ $entry->teacherSubject?->subject?->name ?? 'N/A' }}</strong>
+                                                    <div class="event-actions">
+                                                        <a href="{{ route('dashboard.admin.timetables.edit', $entry) }}" class="event-action-btn" title="Edit">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                            </svg>
+                                                        </a>
+                                                        <form action="{{ route('dashboard.admin.timetables.destroy', $entry) }}" method="POST" style="display: inline; margin: 0;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="event-action-btn event-action-btn-danger" title="Delete" onclick="return confirm('Delete this entry?')">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                </svg>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                                <div class="event-details">
+                                                    <div class="event-info">
+                                                        <span class="event-teacher">{{ $entry->teacherSubject?->teacher?->name ?? 'N/A' }}</span>
+                                                        <span class="event-room">{{ $entry->room ?? 'Room TBD' }} {{ $entry->building ? '(' . $entry->building . ')' : '' }}</span>
+                                                    </div>
+                                                    @if($entry->capacity)
+                                                        <span class="event-capacity">Cap: {{ $entry->capacity }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endforeach
                 </div>
             @endif
-        </div>
 
-        @if($timetables->hasPages())
-            <div class="pagination-wrapper">
-                {{ $timetables->links() }}
-            </div>
-        @endif
+            @if($totalWeeks > 1)
+                <div class="pagination-wrapper">
+                    <div class="week-nav">
+                        @for ($w = 1; $w <= $totalWeeks; $w++)
+                            <button type="button"
+                               wire:click="$set('week', {{ $w }})"
+                               class="week-btn {{ $currentWeek == $w ? 'active' : '' }}">
+                                Week {{ $w }}
+                            </button>
+                        @endfor
+                    </div>
+                </div>
+            @endif
+            @endif
     </div>
 </div>
 
 @push('styles')
 <style>
+.field input,
 .field select {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 0.45rem 0.7rem;
     background: var(--bg-dark);
     border: 1px solid var(--border-dark);
     border-radius: var(--radius-md);
     color: var(--text-dark);
+    font-size: 0.92rem;
+}
+
+.field span {
+    font-size: 0.85rem;
+}
+
+.filters-card {
+    padding: var(--spacing-md);
+}
+
+.filters-row {
+    gap: var(--spacing-md);
+    align-items: end;
 }
 
 .field select option {
@@ -175,9 +241,44 @@
     color: white;
 }
 
+.filters-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.btn-critical {
+    background: rgba(239, 68, 68, 0.95);
+    border: 1px solid rgba(239, 68, 68, 1);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.btn-critical:hover {
+    background: rgba(220, 38, 38, 1);
+    border-color: rgba(220, 38, 38, 1);
+    color: #ffffff;
+}
+
+.btn-critical-all {
+    background: rgba(127, 29, 29, 0.98);
+    border-color: rgba(127, 29, 29, 1);
+}
+
+.btn-critical-all:hover {
+    background: rgba(99, 18, 18, 1);
+    border-color: rgba(99, 18, 18, 1);
+}
+
+.btn-critical:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 .calendar-wrapper {
     overflow-x: auto;
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
 }
 
 .calendar-grid {
@@ -188,7 +289,7 @@
     border: 1px solid var(--border-dark);
     border-radius: var(--radius-md);
     overflow: hidden;
-    min-width: 900px;
+    min-width: 760px;
 }
 
 .time-column, .day-column {
@@ -196,47 +297,73 @@
     flex-direction: column;
 }
 
+.day-column .calendar-header-cell,
+.day-column .schedule-cell {
+    border-right: 1px solid var(--border-dark);
+}
+
+.day-column:last-child .calendar-header-cell,
+.day-column:last-child .schedule-cell {
+    border-right: none;
+}
+
 .calendar-header-cell {
     background: rgba(255, 255, 255, 0.03);
-    padding: var(--spacing-md);
+    padding: 0.6rem 0.45rem;
     font-weight: 600;
     text-align: center;
     color: var(--text-dark);
     border-bottom: 2px solid var(--border-dark);
 }
 
+.day-name {
+    display: block;
+    font-size: 0.82rem;
+}
+
+.day-num {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-dark-secondary);
+    margin-top: 2px;
+}
+
 .time-cell {
     background: var(--bg-dark-secondary);
-    padding: var(--spacing-sm);
-    font-size: 0.85rem;
+    padding: 0.3rem;
+    font-size: 0.8rem;
     color: var(--text-dark-secondary);
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 60px;
+    min-height: 52px;
     border-bottom: 1px solid var(--border-dark);
+    border-right: 1px solid var(--border-dark);
 }
 
 .schedule-cell {
     background: var(--bg-dark-secondary);
-    padding: var(--spacing-xs);
-    min-height: 60px;
+    padding: 4px;
+    min-height: 52px;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: 4px;
     border-bottom: 1px solid var(--border-dark);
+    overflow-y: auto;
+    max-height: 110px;
 }
 
 .schedule-event {
     background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(99, 102, 241, 0.1));
     border-left: 3px solid var(--primary);
     border-radius: var(--radius-sm);
-    padding: var(--spacing-xs);
+    padding: 3px 5px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .schedule-event:hover {
@@ -252,10 +379,10 @@
 }
 
 .event-subject {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     color: var(--text-dark);
     font-weight: 600;
-    line-height: 1.3;
+    line-height: 1.2;
     flex: 1;
 }
 
@@ -271,8 +398,8 @@
 }
 
 .event-action-btn {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     padding: 0;
     border: none;
     background: rgba(255, 255, 255, 0.1);
@@ -309,17 +436,17 @@
 }
 
 .event-teacher {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: var(--text-dark-secondary);
 }
 
 .event-room {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: var(--text-dark-secondary);
 }
 
 .event-capacity {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-dark-secondary);
     background: rgba(255, 255, 255, 0.05);
     padding: 2px 6px;
@@ -373,6 +500,42 @@
 .action-btn-danger:hover {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-sm);
+}
+
+.week-nav {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.week-btn {
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--border-dark);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-dark);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.week-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-light);
+}
+
+.week-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
 }
 </style>
 @endpush

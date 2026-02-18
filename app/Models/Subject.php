@@ -14,12 +14,16 @@ class Subject extends Model
         'name',
         'description',
         'credits',
+        'year',
+        'semester',
         'course_id',
         'status',
     ];
 
     protected $casts = [
         'credits' => 'integer',
+        'year' => 'integer',
+        'semester' => 'integer',
     ];
 
     public function course()

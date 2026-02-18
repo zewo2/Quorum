@@ -84,6 +84,24 @@
                     @endforeach
                 </select>
             </label>
+            <label class="field">
+                <span>Year</span>
+                <select wire:model.live="year">
+                    <option value="">All</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </label>
+            <label class="field">
+                <span>Semester</span>
+                <select wire:model.live="semester">
+                    <option value="">All</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </label>
             <div class="filters-actions">
                 <button type="button" class="btn btn-secondary" wire:click="resetFilters">Clear</button>
             </div>
@@ -103,6 +121,7 @@
                         <th>Subject</th>
                         <th>Code</th>
                         <th>Course</th>
+                        <th>Year/Sem</th>
                         <th>Credits</th>
                         <th>Actions</th>
                     </tr>
@@ -137,6 +156,9 @@
                                 @endif
                             </td>
                             <td>
+                                <span class="badge">Y{{ $subject->year }} / S{{ $subject->semester }}</span>
+                            </td>
+                            <td>
                                 <span class="credits-badge">{{ $subject->credits }}</span>
                             </td>
                             <td class="row-actions">
@@ -162,7 +184,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="empty-state">
+                            <td colspan="6" class="empty-state">
                                 <div class="empty-content">
                                     <p>No subjects found</p>
                                 </div>

@@ -25,9 +25,9 @@ class CourseController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'capacity' => ['required', 'integer', 'min:1', 'max:500'],
-            'credits' => ['required', 'integer', 'min:1', 'max:20'],
+            'total_years' => ['required', 'integer', 'min:2', 'max:4'],
             'department' => ['required', 'string', 'max:100'],
-            'status' => ['required', 'in:active,inactive,archived'],
+            'status' => ['required', 'in:active,inactive'],
         ]);
 
         Course::create($validated);
@@ -55,9 +55,9 @@ class CourseController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'capacity' => ['required', 'integer', 'min:1', 'max:500'],
-            'credits' => ['required', 'integer', 'min:1', 'max:20'],
+            'total_years' => ['required', 'integer', 'min:2', 'max:4'],
             'department' => ['required', 'string', 'max:100'],
-            'status' => ['required', 'in:active,inactive,archived'],
+            'status' => ['required', 'in:active,inactive'],
         ]);
 
         $course->update($validated);

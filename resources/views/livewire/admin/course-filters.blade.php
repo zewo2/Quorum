@@ -112,7 +112,7 @@
                         <th>Course</th>
                         <th>Code</th>
                         <th>Department</th>
-                        <th>Year/Semester</th>
+                        <th>Total Years</th>
                         <th>Enrolled</th>
                         <th>Subjects</th>
                         <th>Status</th>
@@ -133,7 +133,7 @@
                             </td>
                             <td>{{ $course->code }}</td>
                             <td>{{ $course->department }}</td>
-                            <td>Year {{ $course->year }} / Sem {{ $course->semester }}</td>
+                            <td>{{ $course->total_years }}</td>
                             <td>{{ $course->enrollments_count }} / {{ $course->capacity }}</td>
                             <td>{{ $course->subjects_count }}</td>
                             <td>

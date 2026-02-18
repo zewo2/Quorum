@@ -22,6 +22,12 @@
                     <span class="logo-text">Q</span>
                     <span class="logo-full">Quorum</span>
                 </a>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
@@ -211,6 +217,8 @@
             </div>
         </aside>
 
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <div class="dashboard-main">
             <!-- Top Bar -->
             <header class="dashboard-header">
@@ -220,6 +228,11 @@
                             <line x1="3" y1="12" x2="21" y2="12"></line>
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <button class="desktop-sidebar-toggle" id="sidebarDesktopToggle" aria-label="Toggle sidebar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
                     <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
@@ -288,9 +301,71 @@
     @livewireScripts
     @stack('scripts')
     <script>
-        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.querySelector('.sidebar')?.classList.toggle('active');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const desktopToggle = document.getElementById('sidebarDesktopToggle');
+        const layout = document.querySelector('.dashboard-layout');
+
+        const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
+        const openMobileSidebar = () => {
+            sidebar?.classList.add('active');
+            sidebarOverlay?.classList.add('active');
+            document.body.classList.add('sidebar-open');
+        };
+
+        const closeMobileSidebar = () => {
+            sidebar?.classList.remove('active');
+            sidebarOverlay?.classList.remove('active');
+            document.body.classList.remove('sidebar-open');
+        };
+
+        sidebarToggle?.addEventListener('click', function() {
+            if (isMobile()) {
+                openMobileSidebar();
+            }
         });
+
+        sidebarCloseBtn?.addEventListener('click', closeMobileSidebar);
+        sidebarOverlay?.addEventListener('click', closeMobileSidebar);
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMobileSidebar();
+            }
+        });
+
+        sidebar?.querySelectorAll('a.nav-item').forEach((link) => {
+            link.addEventListener('click', () => {
+                if (isMobile()) {
+                    closeMobileSidebar();
+                }
+            });
+        });
+
+        const applyDesktopSidebarState = () => {
+            const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (!isMobile()) {
+                layout?.classList.toggle('sidebar-collapsed', collapsed);
+            } else {
+                layout?.classList.remove('sidebar-collapsed');
+                closeMobileSidebar();
+            }
+        };
+
+        desktopToggle?.addEventListener('click', function() {
+            if (isMobile()) {
+                return;
+            }
+
+            layout?.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', String(layout?.classList.contains('sidebar-collapsed')));
+        });
+
+        window.addEventListener('resize', applyDesktopSidebarState);
+        applyDesktopSidebarState();
 
         const userDropdownBtn = document.getElementById('userDropdownBtn');
         const userDropdownMenu = document.getElementById('userDropdownMenu');

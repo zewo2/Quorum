@@ -12,6 +12,8 @@ class TimetableGaService
     private int $populationSize;
     private int $generations;
     private float $mutationRate;
+    private string $mode = 'normal';
+    private ?int $weeklyTarget = 40;
 
     public function __construct(array $days, array $slots, int $populationSize = 40, int $generations = 60, float $mutationRate = 0.15)
     {
@@ -28,12 +30,21 @@ class TimetableGaService
         Collection $existingTimetables,
         Carbon $monthStart,
         Carbon $monthEnd,
-        array $remainingHoursByTeacherSubject
+        array $remainingHoursByTeacherSubject,
+        array $options = []
     ): array
     {
         if ($teacherSubjects->isEmpty()) {
             return [];
         }
+
+        $requestedMode = strtolower((string) ($options['mode'] ?? 'normal'));
+        $this->mode = in_array($requestedMode, ['relaxed', 'normal', 'emergency'], true) ? $requestedMode : 'normal';
+        $this->weeklyTarget = match ($this->mode) {
+            'relaxed' => 20,
+            'normal' => 40,
+            default => null,
+        };
 
         $teacherSubjects = $teacherSubjects->keyBy('id');
         $sessionGenes = $this->buildSessionGenes($teacherSubjects, $remainingHoursByTeacherSubject);
@@ -64,16 +75,31 @@ class TimetableGaService
     private function buildSessionGenes(Collection $teacherSubjects, array $remainingHoursByTeacherSubject): array
     {
         $sessionGenes = [];
+        $semesterMonths = 6;
 
         foreach ($teacherSubjects as $teacherSubject) {
             $remaining = max(0, (float) ($remainingHoursByTeacherSubject[$teacherSubject->id] ?? 0));
-            $sessionCount = (int) ceil($remaining / 2);
+            if ($remaining <= 0) {
+                continue;
+            }
+
+            // Spread workload across semester unless in emergency mode.
+            $plannedHoursThisMonth = $remaining;
+            if ($this->mode !== 'emergency') {
+                $suggestedMonthlyHours = max(2, (int) round($remaining / $semesterMonths));
+                $plannedHoursThisMonth = min($remaining, $suggestedMonthlyHours);
+            }
+            $sessionCount = (int) ceil($plannedHoursThisMonth / 2);
+
+            $courseIds = $this->extractCourseIdsFromTeacherSubject($teacherSubject);
 
             for ($index = 1; $index <= $sessionCount; $index++) {
                 $geneKey = $teacherSubject->id . ':' . $index;
                 $sessionGenes[$geneKey] = [
                     'gene_key' => $geneKey,
                     'teacher_subject_id' => $teacherSubject->id,
+                    'subject_id' => $teacherSubject->subject_id,
+                    'course_ids' => $courseIds,
                 ];
             }
         }
@@ -120,6 +146,8 @@ class TimetableGaService
             $schedule[$gene['gene_key']] = [
                 'gene_key' => $gene['gene_key'],
                 'teacher_subject_id' => $gene['teacher_subject_id'],
+                'subject_id' => $gene['subject_id'] ?? null,
+                'course_ids' => $gene['course_ids'] ?? [],
                 'class_date' => $classDate,
                 'day_of_week' => Carbon::parse($classDate)->format('l'),
                 'start_time' => $slot['start_time'],
@@ -152,17 +180,24 @@ class TimetableGaService
 
         $roomDateSlots = [];
         $teacherDateSlots = [];
+        $courseDateSlots = [];
         $roomWeeklySlots = [];
         $teacherWeeklySlots = [];
+        $courseWeeklySlots = [];
+        $weeklyHours = [];
 
         foreach ($existingTimetables as $timetable) {
             $teacherId = $timetable->teacherSubject?->teacher_id;
+            $courseIds = $this->extractCourseIdsFromTeacherSubject($timetable->teacherSubject);
             $startKey = $this->normalizeTime($timetable->start_time);
 
             if ($timetable->class_date) {
                 $dateKey = $this->normalizeDate($timetable->class_date);
                 if ($teacherId) {
                     $teacherDateSlots[$teacherId][$dateKey][$startKey] = true;
+                }
+                foreach ($courseIds as $courseId) {
+                    $courseDateSlots[$courseId][$dateKey][$startKey] = true;
                 }
                 if ($timetable->room) {
                     $roomDateSlots[$timetable->room][$dateKey][$startKey] = true;
@@ -171,6 +206,9 @@ class TimetableGaService
                 $weekday = $timetable->day_of_week;
                 if ($teacherId) {
                     $teacherWeeklySlots[$teacherId][$weekday][$startKey] = true;
+                }
+                foreach ($courseIds as $courseId) {
+                    $courseWeeklySlots[$courseId][$weekday][$startKey] = true;
                 }
                 if ($timetable->room) {
                     $roomWeeklySlots[$timetable->room][$weekday][$startKey] = true;
@@ -181,9 +219,18 @@ class TimetableGaService
         foreach ($schedule as $entry) {
             $teacherSubject = $teacherSubjects->firstWhere('id', $entry['teacher_subject_id']);
             $teacherId = $teacherSubject?->teacher_id;
+            $courseIds = collect($entry['course_ids'] ?? $this->extractCourseIdsFromTeacherSubject($teacherSubject))
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
             $entryStart = $this->normalizeTime($entry['start_time']);
             $entryDate = $this->normalizeDate($entry['class_date']);
             $entryDay = $entry['day_of_week'];
+            $entryDuration = $this->durationHours($entry['start_time'], $entry['end_time']);
+
+            $weekKey = Carbon::parse($entryDate)->format('o-W');
+            $weeklyHours[$weekKey] = ($weeklyHours[$weekKey] ?? 0) + $entryDuration;
 
             if (!$entry['room']) {
                 $penalty += 300;
@@ -193,20 +240,36 @@ class TimetableGaService
             $roomConflict = ($roomDateSlots[$entry['room']][$entryDate][$entryStart] ?? false)
                 || ($roomWeeklySlots[$entry['room']][$entryDay][$entryStart] ?? false);
             if ($roomConflict) {
-                $penalty += 1000;
+                $penalty += 1000000;
+                continue;
             }
 
             if ($teacherId) {
                 $teacherConflict = ($teacherDateSlots[$teacherId][$entryDate][$entryStart] ?? false)
                     || ($teacherWeeklySlots[$teacherId][$entryDay][$entryStart] ?? false);
                 if ($teacherConflict) {
-                    $penalty += 1000;
+                    $penalty += 1000000;
+                    continue;
+                }
+            }
+
+            // Hard rule: same course cohort cannot have two classes at the same time slot.
+            foreach ($courseIds as $courseId) {
+                $courseConflict = ($courseDateSlots[$courseId][$entryDate][$entryStart] ?? false)
+                    || ($courseWeeklySlots[$courseId][$entryDay][$entryStart] ?? false);
+
+                if ($courseConflict) {
+                    $penalty += 1000000;
+                    continue 2;
                 }
             }
 
             $roomDateSlots[$entry['room']][$entryDate][$entryStart] = true;
             if ($teacherId) {
                 $teacherDateSlots[$teacherId][$entryDate][$entryStart] = true;
+            }
+            foreach ($courseIds as $courseId) {
+                $courseDateSlots[$courseId][$entryDate][$entryStart] = true;
             }
 
             $room = $rooms->firstWhere('code', $entry['room']);
@@ -218,6 +281,18 @@ class TimetableGaService
                     $penalty += 200;
                 } else {
                     $penalty += abs($capacity - $required) / 10;
+                }
+            }
+        }
+
+        // Soft weekly target by mode.
+        if ($this->weeklyTarget !== null) {
+            foreach ($weeklyHours as $hours) {
+                $deviation = abs($hours - $this->weeklyTarget);
+                $penalty += $deviation * 6;
+
+                if ($hours > $this->weeklyTarget) {
+                    $penalty += ($hours - $this->weeklyTarget) * 40;
                 }
             }
         }
@@ -286,6 +361,8 @@ class TimetableGaService
                 $gene = [
                     'gene_key' => $geneKey,
                     'teacher_subject_id' => $sessionGenes[$geneKey]['teacher_subject_id'],
+                    'subject_id' => $sessionGenes[$geneKey]['subject_id'] ?? null,
+                    'course_ids' => $sessionGenes[$geneKey]['course_ids'] ?? [],
                     'class_date' => $classDate,
                     'day_of_week' => Carbon::parse($classDate)->format('l'),
                     'start_time' => $slot['start_time'],
@@ -311,6 +388,8 @@ class TimetableGaService
                 $schedule[$geneKey] = [
                     'gene_key' => $geneKey,
                     'teacher_subject_id' => $gene['teacher_subject_id'],
+                    'subject_id' => $gene['subject_id'] ?? null,
+                    'course_ids' => $gene['course_ids'] ?? [],
                     'class_date' => $classDate,
                     'day_of_week' => Carbon::parse($classDate)->format('l'),
                     'start_time' => $slot['start_time'],
@@ -331,5 +410,31 @@ class TimetableGaService
             'start_time' => $slot[0],
             'end_time' => $slot[1],
         ];
+    }
+
+    private function extractCourseIdsFromTeacherSubject($teacherSubject): array
+    {
+        if (!$teacherSubject) {
+            return [];
+        }
+
+        $courseIds = $teacherSubject->subject?->courses?->pluck('id')
+            ?->map(fn ($id) => (int) $id)
+            ->all() ?? [];
+
+        $primaryCourseId = (int) ($teacherSubject->subject?->course_id ?? 0);
+        if ($primaryCourseId > 0 && !in_array($primaryCourseId, $courseIds, true)) {
+            $courseIds[] = $primaryCourseId;
+        }
+
+        return array_values(array_unique(array_filter($courseIds)));
+    }
+
+    private function durationHours($startTime, $endTime): int
+    {
+        $start = Carbon::parse($this->normalizeTime($startTime));
+        $end = Carbon::parse($this->normalizeTime($endTime));
+
+        return max(0, (int) round($start->diffInMinutes($end) / 60));
     }
 }

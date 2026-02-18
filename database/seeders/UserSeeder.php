@@ -26,6 +26,30 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
+            'name' => 'Teacher User',
+            'email' => 'teacher@quorum.edu',
+            'password' => Hash::make('password'),
+            'role' => 'teacher',
+            'phone' => '910000002',
+            'address' => 'Rua Professores, 2, 1000-002 Lisboa',
+            'date_of_birth' => '1985-03-15',
+            'nif' => '123456790',
+            'email_verified_at' => now(),
+        ]);
+
+        User::create([
+            'name' => 'Student User',
+            'email' => 'student@quorum.edu',
+            'password' => Hash::make('password'),
+            'role' => 'student',
+            'phone' => '910000003',
+            'address' => 'Rua Estudantes, 3, 1000-003 Lisboa',
+            'date_of_birth' => '1985-03-15',
+            'nif' => '123456791',
+            'email_verified_at' => now(),
+        ]);
+
+        User::create([
             'name' => 'John Smith',
             'email' => 'john.smith@quorum.edu',
             'password' => Hash::make('password'),

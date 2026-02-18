@@ -21,7 +21,7 @@
                     </div>
                 @endif
             </div>
-            <div class="profile-header-info">
+            <div class="profile-header-info" style="margin-top: 10px">
                 <h1 class="profile-name">{{ $user->name }}</h1>
                 <p class="profile-role">{{ ucfirst($user->role ?? 'Student') }}</p>
                 @if($user->email)

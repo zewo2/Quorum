@@ -22,6 +22,17 @@ class SubjectSeeder extends Seeder
         $bus101 = Course::where('code', 'BUS101')->first();
         $bus201 = Course::where('code', 'BUS201')->first();
 
+        $courseMetaById = [
+            $cs101->id => ['year' => 1, 'semester' => 1],
+            $cs201->id => ['year' => 2, 'semester' => 1],
+            $cs301->id => ['year' => 3, 'semester' => 1],
+            $cs202->id => ['year' => 2, 'semester' => 2],
+            $cs401->id => ['year' => 4, 'semester' => 1],
+            $cs302->id => ['year' => 3, 'semester' => 2],
+            $bus101->id => ['year' => 1, 'semester' => 1],
+            $bus201->id => ['year' => 2, 'semester' => 1],
+        ];
+
         $subjects = [
             // CS101 subjects
             [
@@ -169,7 +180,14 @@ class SubjectSeeder extends Seeder
         ];
 
         foreach ($subjects as $subject) {
-            $createdSubject = Subject::create($subject);
+            $meta = $courseMetaById[$subject['course_id']] ?? ['year' => 1, 'semester' => 1];
+            $subject['year'] = $meta['year'];
+            $subject['semester'] = $meta['semester'];
+
+            $createdSubject = Subject::updateOrCreate(
+                ['code' => $subject['code']],
+                $subject
+            );
             $createdSubject->courses()->syncWithoutDetaching([$subject['course_id']]);
         }
     }

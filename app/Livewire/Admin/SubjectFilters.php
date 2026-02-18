@@ -18,6 +18,12 @@ class SubjectFilters extends Component
     #[Url]
     public string $course = '';
 
+    #[Url]
+    public string $year = '';
+
+    #[Url]
+    public string $semester = '';
+
     public function updated(): void
     {
         $this->resetPage();
@@ -25,7 +31,7 @@ class SubjectFilters extends Component
 
     public function resetFilters(): void
     {
-        $this->reset('search', 'course');
+        $this->reset('search', 'course', 'year', 'semester');
         $this->resetPage();
     }
 
@@ -46,6 +52,14 @@ class SubjectFilters extends Component
             $query->whereHas('courses', function ($q) {
                 $q->where('courses.id', $this->course);
             });
+        }
+
+        if (filled($this->year)) {
+            $query->where('year', (int) $this->year);
+        }
+
+        if (filled($this->semester)) {
+            $query->where('semester', (int) $this->semester);
         }
 
         $subjects = $query->orderBy('name')->paginate(15);

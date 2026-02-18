@@ -63,12 +63,47 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('dashboard.admin.timetables.ga.generate') }}" style="display: grid; gap: 1rem;">
+            <form method="POST" action="{{ route('dashboard.admin.timetables.ga.generate') }}" class="ga-params-form" style="display: grid; gap: 1rem;">
                 @csrf
-                <label class="field">
-                    <span>Month</span>
-                    <input type="month" name="month" value="{{ old('month', $selectedMonth ?? now()->format('Y-m')) }}" required>
-                </label>
+                <div class="ga-inline-fields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    <label class="field">
+                        <span>Month</span>
+                        <input type="month" name="month" value="{{ old('month', $selectedMonth ?? now()->format('Y-m')) }}" required>
+                    </label>
+
+                    <div class="field ga-mode-field">
+                        <span>GA Mode</span>
+                        @php
+                            $selectedModeValue = old('mode', $selectedMode ?? 'normal');
+                        @endphp
+                        <select name="mode" required>
+                            <option value="relaxed" {{ $selectedModeValue === 'relaxed' ? 'selected' : '' }}>Relaxed mode (20h/week soft target)</option>
+                            <option value="normal" {{ $selectedModeValue === 'normal' ? 'selected' : '' }}>Normal mode (40h/week soft target)</option>
+                            <option value="emergency" {{ $selectedModeValue === 'emergency' ? 'selected' : '' }}>Emergency mode (max fill, no conflicts)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="ga-inline-fields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    <label class="field">
+                        <span>Course Year</span>
+                        <select name="selected_year">
+                            <option value="">All years</option>
+                            @for($year = 1; $year <= 4; $year++)
+                                <option value="{{ $year }}" {{ (int) old('selected_year', $selectedYear ?? 0) === $year ? 'selected' : '' }}>{{ $year }}</option>
+                            @endfor
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>Semester</span>
+                        <select name="selected_semester">
+                            <option value="">All semesters</option>
+                            <option value="1" {{ (int) old('selected_semester', $selectedSemester ?? 0) === 1 ? 'selected' : '' }}>1</option>
+                            <option value="2" {{ (int) old('selected_semester', $selectedSemester ?? 0) === 2 ? 'selected' : '' }}>2</option>
+                        </select>
+                    </label>
+                </div>
 
                 <div>
                     <p style="margin-bottom: 0.5rem;"><strong>Select Courses</strong></p>
@@ -117,6 +152,8 @@
                                     $scheduled = $meta['scheduled_hours'] ?? 0;
                                     $maxHours = $meta['max_hours'] ?? 0;
                                     $disabled = !$meta || !$meta['selectable'];
+                                    $subjectYear = (int) ($teacherSubject->subject?->year ?? 0);
+                                    $subjectSemester = (int) ($teacherSubject->subject?->semester ?? 0);
 
                                     // Collect course IDs from both pivot and legacy mapping
                                     $courseIds = $teacherSubject->subject?->courses?->pluck('id')->map(fn ($id) => (int) $id)->all() ?? [];
@@ -136,7 +173,7 @@
                                         $courseNames = 'N/A';
                                     }
                                 @endphp
-                                <label class="ga-class-row" data-course-ids="{{ implode(',', $courseIds) }}" style="display: flex; align-items: center; gap: 0.5rem; opacity: {{ $disabled ? '0.55' : '1' }};">
+                                <label class="ga-class-row" data-course-ids="{{ implode(',', $courseIds) }}" data-subject-year="{{ $subjectYear }}" data-subject-semester="{{ $subjectSemester }}" style="display: flex; align-items: center; gap: 0.5rem; opacity: {{ $disabled ? '0.55' : '1' }};">
                                     <input
                                         type="checkbox"
                                         class="ga-class-checkbox"
@@ -148,6 +185,7 @@
                                     <span>
                                         {{ $courseNames }} ·
                                         {{ $teacherSubject->subject?->name ?? 'N/A' }} ·
+                                        Y{{ $subjectYear }} / S{{ $subjectSemester }} ·
                                         {{ $teacherSubject->teacher?->name ?? 'N/A' }}
                                         ({{ $scheduled }}/{{ $maxHours }}h, remaining {{ $remaining }}h)
                                     </span>
@@ -173,6 +211,8 @@
                 <p><strong>Selected courses:</strong> {{ $stats['courses_selected'] ?? 0 }}</p>
                 <p><strong>Selected classes:</strong> {{ $stats['classes_selected'] ?? 0 }}</p>
                 <p><strong>Month:</strong> {{ $stats['month'] ?? '-' }}</p>
+                <p><strong>Mode:</strong> {{ ucfirst($stats['mode'] ?? ($selectedMode ?? 'normal')) }}</p>
+                <p><strong>Year/Semester:</strong> {{ $stats['year'] ?? ($selectedYear ?? 'All') }} / {{ $stats['semester'] ?? ($selectedSemester ?? 'All') }}</p>
             </div>
         </div>
     @endif
@@ -202,7 +242,7 @@
                             <td>{{ $entry['teacher'] }}</td>
                             <td>{{ $entry['subject'] }}</td>
                             <td>{{ \Carbon\Carbon::parse($entry['class_date'])->format('Y-m-d') }}</td>
-                            <td>{{ $entry['day_of_week'] }}</td>
+                            <td>{{ \Carbon\Carbon::parse($entry['class_date'])->format('j') }} - {{ $entry['day_of_week'] }}</td>
                             <td>
                                 <span class="badge">
                                     {{ $entry['start_time'] }} - {{ $entry['end_time'] }}
@@ -231,6 +271,9 @@
                 <form method="POST" action="{{ route('dashboard.admin.timetables.ga.generate') }}">
                     @csrf
                     <input type="hidden" name="month" value="{{ $selectedMonth ?? now()->format('Y-m') }}">
+                    <input type="hidden" name="mode" value="{{ $selectedMode ?? 'normal' }}">
+                    <input type="hidden" name="selected_year" value="{{ $selectedYear ?? '' }}">
+                    <input type="hidden" name="selected_semester" value="{{ $selectedSemester ?? '' }}">
                     @foreach(($selectedCourseIds ?? []) as $courseId)
                         <input type="hidden" name="selected_course_ids[]" value="{{ $courseId }}">
                     @endforeach
@@ -247,6 +290,43 @@
 
 @push('styles')
 <style>
+    .ga-params-form .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        color: var(--text-dark-secondary);
+        font-size: 0.9rem;
+    }
+
+    .ga-params-form .field input,
+    .ga-params-form .field select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: var(--bg-dark);
+        border: 1px solid var(--border-dark);
+        border-radius: var(--radius-md);
+        color: var(--text-dark);
+        width: 100%;
+        font-family: inherit;
+        font-size: 0.95rem;
+    }
+
+    .ga-params-form .field input:focus,
+    .ga-params-form .field select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .ga-params-form .field select option {
+        background: var(--bg-dark);
+        color: var(--text-dark);
+        padding: 8px;
+    }
+
+    .ga-params-form .field select option:checked {
+        background: var(--primary);
+        color: white;
+    }
+
     .courses-dropdown {
         border: 1px solid var(--border-dark);
         border-radius: var(--radius-md);
@@ -313,6 +393,8 @@
         const courseCheckboxes = Array.from(document.querySelectorAll('.ga-course-checkbox'));
         const classCheckboxes = Array.from(document.querySelectorAll('.ga-class-checkbox'));
         const classRows = Array.from(document.querySelectorAll('.ga-class-row'));
+        const selectedYearSelect = document.querySelector('select[name="selected_year"]');
+        const selectedSemesterSelect = document.querySelector('select[name="selected_semester"]');
 
         const updateClassDropdownLabel = () => {
             if (!classDropdownLabel) return;
@@ -333,9 +415,16 @@
                 const rowCourseIds = (row.getAttribute('data-course-ids') || '')
                     .split(',')
                     .filter((id) => id !== '');
+                const rowYear = row.getAttribute('data-subject-year') || '';
+                const rowSemester = row.getAttribute('data-subject-semester') || '';
+
+                const selectedYear = selectedYearSelect?.value || '';
+                const selectedSemester = selectedSemesterSelect?.value || '';
 
                 const matchesSelectedCourse = rowCourseIds.some((id) => selectedCourseIds.has(id));
-                const shouldShow = selectedCourseIds.size === 0 || matchesSelectedCourse;
+                const matchesYear = selectedYear === '' || rowYear === selectedYear;
+                const matchesSemester = selectedSemester === '' || rowSemester === selectedSemester;
+                const shouldShow = (selectedCourseIds.size === 0 || matchesSelectedCourse) && matchesYear && matchesSemester;
 
                 row.style.display = shouldShow ? 'flex' : 'none';
 
@@ -359,6 +448,14 @@
         courseCheckboxes.forEach((checkbox) => {
             checkbox.addEventListener('change', applyCourseFilter);
         });
+
+        if (selectedYearSelect) {
+            selectedYearSelect.addEventListener('change', applyCourseFilter);
+        }
+
+        if (selectedSemesterSelect) {
+            selectedSemesterSelect.addEventListener('change', applyCourseFilter);
+        }
 
         classCheckboxes.forEach((checkbox) => {
             checkbox.addEventListener('change', updateClassDropdownLabel);

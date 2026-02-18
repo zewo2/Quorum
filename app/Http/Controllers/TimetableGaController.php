@@ -31,6 +31,9 @@ class TimetableGaController extends Controller
         $selectedCourseIds = $request->session()->get('ga.selected_course_ids', []);
         $selectedTeacherSubjectIds = $request->session()->get('ga.selected_teacher_subject_ids', []);
         $selectedMonth = $request->session()->get('ga.selected_month', now()->format('Y-m'));
+        $selectedMode = $request->session()->get('ga.selected_mode', 'normal');
+        $selectedYear = $request->session()->get('ga.selected_year');
+        $selectedSemester = $request->session()->get('ga.selected_semester');
 
         $courses = Course::orderBy('name')->get(['id', 'name', 'code']);
 
@@ -48,7 +51,10 @@ class TimetableGaController extends Controller
             'hoursMeta',
             'selectedCourseIds',
             'selectedTeacherSubjectIds',
-            'selectedMonth'
+            'selectedMonth',
+            'selectedMode',
+            'selectedYear',
+            'selectedSemester'
         ));
     }
 
@@ -56,8 +62,11 @@ class TimetableGaController extends Controller
     {
         $validated = $request->validate([
             'month' => ['required', 'date_format:Y-m'],
+            'mode' => ['required', 'in:relaxed,normal,emergency'],
             'selected_course_ids' => ['required', 'array', 'min:1'],
             'selected_course_ids.*' => ['integer', 'exists:courses,id'],
+            'selected_year' => ['nullable', 'integer', 'min:1', 'max:4'],
+            'selected_semester' => ['nullable', 'integer', 'in:1,2'],
             'selected_teacher_subject_ids' => ['nullable', 'array'],
             'selected_teacher_subject_ids.*' => ['integer', 'exists:teacher_subjects,id'],
         ]);
@@ -68,6 +77,14 @@ class TimetableGaController extends Controller
                 $query->whereHas('courses', function ($courseQuery) use ($validated) {
                     $courseQuery->whereIn('courses.id', $validated['selected_course_ids']);
                 });
+
+                if (!empty($validated['selected_year'])) {
+                    $query->where('year', (int) $validated['selected_year']);
+                }
+
+                if (!empty($validated['selected_semester'])) {
+                    $query->where('semester', (int) $validated['selected_semester']);
+                }
             })
             ->get();
 
@@ -93,7 +110,15 @@ class TimetableGaController extends Controller
         $existing = Timetable::with('teacherSubject')->get();
         $rooms = Room::orderBy('capacity')->get();
         $service = new TimetableGaService($this->days, $this->slots);
-        $schedule = $service->generateMonthly($targets, $rooms, $existing, $monthStart, $monthEnd, $remainingHours);
+        $schedule = $service->generateMonthly(
+            $targets,
+            $rooms,
+            $existing,
+            $monthStart,
+            $monthEnd,
+            $remainingHours,
+            ['mode' => $validated['mode']]
+        );
 
         $preview = [];
         foreach ($schedule as $entry) {
@@ -129,10 +154,16 @@ class TimetableGaController extends Controller
             'classes_selected' => $targets->count(),
             'courses_selected' => count($validated['selected_course_ids']),
             'month' => $validated['month'],
+            'mode' => $validated['mode'],
+            'year' => $validated['selected_year'] ?? null,
+            'semester' => $validated['selected_semester'] ?? null,
         ]);
         $request->session()->put('ga.selected_course_ids', $validated['selected_course_ids']);
         $request->session()->put('ga.selected_teacher_subject_ids', $validated['selected_teacher_subject_ids'] ?? []);
         $request->session()->put('ga.selected_month', $validated['month']);
+        $request->session()->put('ga.selected_mode', $validated['mode']);
+        $request->session()->put('ga.selected_year', $validated['selected_year'] ?? null);
+        $request->session()->put('ga.selected_semester', $validated['selected_semester'] ?? null);
 
         return redirect()->route('dashboard.admin.timetables.ga')
             ->with('success', 'Schedule generated. Review and apply when ready.');
@@ -147,7 +178,7 @@ class TimetableGaController extends Controller
                 ->withErrors(['ga' => 'No generated schedule to apply.']);
         }
 
-        $teacherSubjects = TeacherSubject::with('teacher', 'subject.course')
+        $teacherSubjects = TeacherSubject::with('teacher', 'subject.course', 'subject.courses')
             ->whereIn('id', collect($preview)->pluck('teacher_subject_id')->all())
             ->get()
             ->keyBy('id');
@@ -161,17 +192,23 @@ class TimetableGaController extends Controller
 
         $roomDateSlots = [];
         $teacherDateSlots = [];
+        $courseDateSlots = [];
         $roomWeeklySlots = [];
         $teacherWeeklySlots = [];
+        $courseWeeklySlots = [];
 
         foreach ($existing as $timetable) {
             $teacherId = $timetable->teacherSubject?->teacher_id;
             $startKey = $this->normalizeTime($timetable->start_time);
+            $courseIds = $this->extractCourseIdsFromTeacherSubject($timetable->teacherSubject);
 
             if ($timetable->class_date) {
                 $dateKey = $this->normalizeDate($timetable->class_date);
                 if ($teacherId) {
                     $teacherDateSlots[$teacherId][$dateKey][$startKey] = true;
+                }
+                foreach ($courseIds as $courseId) {
+                    $courseDateSlots[$courseId][$dateKey][$startKey] = true;
                 }
                 if ($timetable->room) {
                     $roomDateSlots[$timetable->room][$dateKey][$startKey] = true;
@@ -179,6 +216,9 @@ class TimetableGaController extends Controller
             } else {
                 if ($teacherId) {
                     $teacherWeeklySlots[$teacherId][$timetable->day_of_week][$startKey] = true;
+                }
+                foreach ($courseIds as $courseId) {
+                    $courseWeeklySlots[$courseId][$timetable->day_of_week][$startKey] = true;
                 }
                 if ($timetable->room) {
                     $roomWeeklySlots[$timetable->room][$timetable->day_of_week][$startKey] = true;
@@ -188,22 +228,30 @@ class TimetableGaController extends Controller
 
         $applied = 0;
         $skipped = 0;
+        $skippedMissingClass = 0;
+        $skippedNoRoom = 0;
         $conflicts = 0;
+        $roomConflicts = 0;
+        $teacherConflicts = 0;
+        $courseConflicts = 0;
         $hoursLimitReached = 0;
 
         foreach ($preview as $entry) {
             $teacherSubjectId = $entry['teacher_subject_id'];
             if (!isset($teacherSubjects[$teacherSubjectId])) {
                 $skipped++;
+                $skippedMissingClass++;
                 continue;
             }
 
             if (!$entry['room']) {
                 $skipped++;
+                $skippedNoRoom++;
                 continue;
             }
 
             $teacherId = $teacherSubjects[$teacherSubjectId]?->teacher_id;
+            $courseIds = $this->extractCourseIdsFromTeacherSubject($teacherSubjects[$teacherSubjectId]);
             $entryStart = $this->normalizeTime($entry['start_time']);
             $entryDate = $this->normalizeDate($entry['class_date']);
             $entryDay = Carbon::parse($entryDate)->format('l');
@@ -221,8 +269,24 @@ class TimetableGaController extends Controller
                     || ($teacherWeeklySlots[$teacherId][$entryDay][$entryStart] ?? false))
                 : false;
 
-            if ($roomConflict || $teacherConflict) {
+            $courseConflict = false;
+            foreach ($courseIds as $courseId) {
+                $courseConflict = $courseConflict
+                    || ($courseDateSlots[$courseId][$entryDate][$entryStart] ?? false)
+                    || ($courseWeeklySlots[$courseId][$entryDay][$entryStart] ?? false);
+            }
+
+            if ($roomConflict || $teacherConflict || $courseConflict) {
                 $conflicts++;
+                if ($roomConflict) {
+                    $roomConflicts++;
+                }
+                if ($teacherConflict) {
+                    $teacherConflicts++;
+                }
+                if ($courseConflict) {
+                    $courseConflicts++;
+                }
                 continue;
             }
 
@@ -243,6 +307,9 @@ class TimetableGaController extends Controller
             if ($teacherId) {
                 $teacherDateSlots[$teacherId][$entryDate][$entryStart] = true;
             }
+            foreach ($courseIds as $courseId) {
+                $courseDateSlots[$courseId][$entryDate][$entryStart] = true;
+            }
 
             $remainingHours[$teacherSubjectId] = max(0, ($remainingHours[$teacherSubjectId] ?? 0) - $duration);
 
@@ -250,7 +317,18 @@ class TimetableGaController extends Controller
         }
 
         return redirect()->route('dashboard.admin.timetables.index')
-            ->with('success', "GA applied: {$applied} created, {$skipped} skipped, {$conflicts} conflicts, {$hoursLimitReached} over legal-hour limit.");
+            ->with('success', "GA applied: {$applied} created, {$skipped} skipped, {$conflicts} conflicts, {$hoursLimitReached} over hour limit.")
+            ->with('ga_apply_breakdown', [
+                'created' => $applied,
+                'skipped_total' => $skipped,
+                'skipped_missing_class' => $skippedMissingClass,
+                'skipped_no_room' => $skippedNoRoom,
+                'conflicts_total' => $conflicts,
+                'conflicts_room' => $roomConflicts,
+                'conflicts_teacher' => $teacherConflicts,
+                'conflicts_course' => $courseConflicts,
+                'over_legal_hour_limit' => $hoursLimitReached,
+            ]);
     }
 
     private function buildHoursMeta(Collection $teacherSubjects): array
@@ -298,7 +376,7 @@ class TimetableGaController extends Controller
         }
 
         if ($credits <= 0) {
-            return 0;
+            return 50;
         }
 
         return (int) round(($credits / 3) * 50);
@@ -332,5 +410,23 @@ class TimetableGaController extends Controller
         }
 
         return (string) $value;
+    }
+
+    private function extractCourseIdsFromTeacherSubject($teacherSubject): array
+    {
+        if (!$teacherSubject) {
+            return [];
+        }
+
+        $courseIds = $teacherSubject->subject?->courses?->pluck('id')
+            ?->map(fn ($id) => (int) $id)
+            ->all() ?? [];
+
+        $primaryCourseId = (int) ($teacherSubject->subject?->course_id ?? 0);
+        if ($primaryCourseId > 0 && !in_array($primaryCourseId, $courseIds, true)) {
+            $courseIds[] = $primaryCourseId;
+        }
+
+        return array_values(array_unique(array_filter($courseIds)));
     }
 }

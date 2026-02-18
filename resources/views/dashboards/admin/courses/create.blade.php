@@ -101,18 +101,18 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="credits">Credits <span class="required">*</span></label>
+                        <label for="total_years">Total Years <span class="required">*</span></label>
                         <input
                             type="number"
-                            id="credits"
-                            name="credits"
-                            value="{{ old('credits', 3) }}"
+                            id="total_years"
+                            name="total_years"
+                            value="{{ old('total_years', 3) }}"
                             required
-                            min="1"
-                            max="20"
-                            class="@error('credits') is-invalid @enderror"
+                            min="2"
+                            max="4"
+                            class="@error('total_years') is-invalid @enderror"
                         >
-                        @error('credits')
+                        @error('total_years')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
@@ -146,7 +146,6 @@
                     >
                         <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        <option value="archived" {{ old('status') === 'archived' ? 'selected' : '' }}>Archived</option>
                     </select>
                     @error('status')
                         <span class="error-message">{{ $message }}</span>

@@ -32,6 +32,8 @@ class SubjectController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'credits' => ['required', 'integer', 'min:1', 'max:20'],
+            'year' => ['required', 'integer', 'min:1', 'max:4'],
+            'semester' => ['required', 'integer', 'in:1,2'],
             'course_ids' => ['required', 'array', 'min:1'],
             'course_ids.*' => ['integer', 'exists:courses,id'],
         ]);
@@ -41,6 +43,8 @@ class SubjectController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'credits' => $validated['credits'],
+            'year' => $validated['year'],
+            'semester' => $validated['semester'],
             'course_id' => $validated['course_ids'][0],
         ]);
 
@@ -71,6 +75,8 @@ class SubjectController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'credits' => ['required', 'integer', 'min:1', 'max:20'],
+            'year' => ['required', 'integer', 'min:1', 'max:4'],
+            'semester' => ['required', 'integer', 'in:1,2'],
             'course_ids' => ['required', 'array', 'min:1'],
             'course_ids.*' => ['integer', 'exists:courses,id'],
         ]);
@@ -80,6 +86,8 @@ class SubjectController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'credits' => $validated['credits'],
+            'year' => $validated['year'],
+            'semester' => $validated['semester'],
             'course_id' => $validated['course_ids'][0],
         ]);
 

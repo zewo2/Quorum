@@ -14,16 +14,14 @@ class Course extends Model
         'code',
         'description',
         'department',
-        'year',
-        'semester',
+        'total_years',
         'capacity',
         'status',
     ];
 
     protected $casts = [
         'capacity' => 'integer',
-        'year' => 'integer',
-        'semester' => 'integer',
+        'total_years' => 'integer',
     ];
 
     public function subjects()

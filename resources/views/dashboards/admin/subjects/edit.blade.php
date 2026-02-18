@@ -130,6 +130,40 @@
                         @enderror
                         <small class="form-hint">Credit hours (1-20)</small>
                     </div>
+
+                    <div class="form-group">
+                        <label for="year">Year <span class="required">*</span></label>
+                        <input
+                            type="number"
+                            id="year"
+                            name="year"
+                            value="{{ old('year', $subject->year) }}"
+                            required
+                            min="1"
+                            max="4"
+                            class="@error('year') is-invalid @enderror"
+                        >
+                        @error('year')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                        <small class="form-hint">Academic year this subject is taught in</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="semester">Semester <span class="required">*</span></label>
+                        <select
+                            id="semester"
+                            name="semester"
+                            required
+                            class="@error('semester') is-invalid @enderror"
+                        >
+                            <option value="1" {{ (int) old('semester', $subject->semester) === 1 ? 'selected' : '' }}>1</option>
+                            <option value="2" {{ (int) old('semester', $subject->semester) === 2 ? 'selected' : '' }}>2</option>
+                        </select>
+                        @error('semester')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
             </div>
 

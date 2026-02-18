@@ -14,6 +14,21 @@
         </div>
     @endif
 
+    @if(session('ga_apply_breakdown'))
+        @php($report = session('ga_apply_breakdown'))
+        <div class="dashboard-card" style="padding: 1rem; margin-top: -0.5rem;">
+            <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1rem;">GA Apply Breakdown</h3>
+            </div>
+            <div style="display: grid; gap: 0.5rem; color: var(--text-dark-secondary); font-size: 0.9rem;">
+                <div><strong>Created:</strong> {{ $report['created'] ?? 0 }}</div>
+                <div><strong>Skipped:</strong> {{ $report['skipped_total'] ?? 0 }} (missing class: {{ $report['skipped_missing_class'] ?? 0 }}, no room: {{ $report['skipped_no_room'] ?? 0 }})</div>
+                <div><strong>Conflicts:</strong> {{ $report['conflicts_total'] ?? 0 }} (room: {{ $report['conflicts_room'] ?? 0 }}, teacher: {{ $report['conflicts_teacher'] ?? 0 }}, course: {{ $report['conflicts_course'] ?? 0 }})</div>
+                <div><strong>Over hour limit:</strong> {{ $report['over_legal_hour_limit'] ?? 0 }}</div>
+            </div>
+        </div>
+    @endif
+
     <div class="page-header">
         <div>
             <h1>Timetable Management</h1>
