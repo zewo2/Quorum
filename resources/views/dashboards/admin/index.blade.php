@@ -217,9 +217,10 @@
 		<div class="info-card activity-card">
 			<div class="info-card-header">
 				<h3>Recent Activity</h3>
-				<span class="view-all-link">View all</span>
+				{{-- <span class="view-all-link">View all</span> --}}
 			</div>
 			<div class="activity-list">
+				@forelse($recentActivity as $activity)
 				<div class="activity-item">
 					<div class="activity-icon-wrapper activity-icon-primary">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -228,48 +229,28 @@
 						</svg>
 					</div>
 					<div class="activity-content">
-						<p class="activity-title">New user registered</p>
-						<span class="activity-time">5 minutes ago</span>
+						<p class="activity-title">{{ $activity->description ?? $activity->action }}</p>
+						@if($activity->user || $activity->performer)
+							<div class="activity-meta">
+								@if($activity->user)
+									<span>For: {{ $activity->user->name }}</span>
+								@endif
+								@if($activity->performer)
+									<span>By: {{ $activity->performer->name }}</span>
+								@endif
+							</div>
+						@endif
+						<span class="activity-time">{{ $activity->created_at->diffForHumans() }}</span>
 					</div>
 				</div>
-				<div class="activity-item">
-					<div class="activity-icon-wrapper activity-icon-success">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-							<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-						</svg>
-					</div>
+				@empty
+				<div class="activity-item" style="opacity: 0.6;">
 					<div class="activity-content">
-						<p class="activity-title">Course "Web Development" updated</p>
-						<span class="activity-time">2 hours ago</span>
+						<p class="activity-title">No recent activity</p>
+						<span class="activity-time">Activities will appear here</span>
 					</div>
 				</div>
-				<div class="activity-item">
-					<div class="activity-icon-wrapper activity-icon-info">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-							<line x1="16" y1="2" x2="16" y2="6"></line>
-							<line x1="8" y1="2" x2="8" y2="6"></line>
-							<line x1="3" y1="10" x2="21" y2="10"></line>
-						</svg>
-					</div>
-					<div class="activity-content">
-						<p class="activity-title">Timetable generated</p>
-						<span class="activity-time">5 hours ago</span>
-					</div>
-				</div>
-				<div class="activity-item">
-					<div class="activity-icon-wrapper activity-icon-warning">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-							<polyline points="14 2 14 8 20 8"></polyline>
-						</svg>
-					</div>
-					<div class="activity-content">
-						<p class="activity-title">New exam scheduled</p>
-						<span class="activity-time">1 day ago</span>
-					</div>
-				</div>
+				@endforelse
 			</div>
 		</div>
 
@@ -279,54 +260,26 @@
 				<span class="status-badge status-all-good">All Systems Operational</span>
 			</div>
 			<div class="status-list">
+				@php
+					$statusItems = [
+						['name' => 'Database Connection', 'key' => 'database'],
+						['name' => 'Storage Space', 'key' => 'storage'],
+					];
+				@endphp
+				@foreach($statusItems as $item)
 				<div class="status-item">
 					<div class="status-item-info">
 						<div class="status-indicator-wrapper">
-							<div class="status-indicator status-success"></div>
-							<span class="status-name">Database Connection</span>
+							<div class="status-indicator status-{{ $systemStatus[$item['key']]['color'] }}"></div>
+							<span class="status-name">{{ $item['name'] }}</span>
 						</div>
-						<span class="status-label status-healthy">Healthy</span>
+						<span class="status-label status-{{ $systemStatus[$item['key']]['color'] }}-text">{{ $systemStatus[$item['key']]['label'] }}</span>
 					</div>
-					<div class="status-bar">
-						<div class="status-bar-fill" style="width: 98%;"></div>
+					<div class="status-bar {{ $systemStatus[$item['key']]['color'] === 'warning' ? 'status-bar-warning' : '' }}">
+						<div class="status-bar-fill" style="width: {{ $systemStatus[$item['key']]['percentage'] }}%;"></div>
 					</div>
 				</div>
-				<div class="status-item">
-					<div class="status-item-info">
-						<div class="status-indicator-wrapper">
-							<div class="status-indicator status-success"></div>
-							<span class="status-name">API Services</span>
-						</div>
-						<span class="status-label status-healthy">Operational</span>
-					</div>
-					<div class="status-bar">
-						<div class="status-bar-fill" style="width: 100%;"></div>
-					</div>
-				</div>
-				<div class="status-item">
-					<div class="status-item-info">
-						<div class="status-indicator-wrapper">
-							<div class="status-indicator status-warning"></div>
-							<span class="status-name">Storage Space</span>
-						</div>
-						<span class="status-label status-warning-text">85% Used</span>
-					</div>
-					<div class="status-bar status-bar-warning">
-						<div class="status-bar-fill" style="width: 85%;"></div>
-					</div>
-				</div>
-				<div class="status-item">
-					<div class="status-item-info">
-						<div class="status-indicator-wrapper">
-							<div class="status-indicator status-success"></div>
-							<span class="status-name">Cache System</span>
-						</div>
-						<span class="status-label status-healthy">Optimal</span>
-					</div>
-					<div class="status-bar">
-						<div class="status-bar-fill" style="width: 95%;"></div>
-					</div>
-				</div>
+				@endforeach
 			</div>
 		</div>
 	</div>
@@ -772,6 +725,9 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--spacing-md);
+	max-height: 200px;
+	overflow-y: auto;
+	padding-right: var(--spacing-xs);
 }
 
 .activity-item {
@@ -826,6 +782,15 @@
 	font-size: 0.9375rem;
 	font-weight: 500;
 	margin: 0 0 0.25rem 0;
+}
+
+.activity-meta {
+	color: var(--text-dark-secondary);
+	font-size: 0.8125rem;
+	margin: 0 0 0.25rem 0;
+	display: flex;
+	gap: var(--spacing-md);
+	flex-wrap: wrap;
 }
 
 .activity-time {
