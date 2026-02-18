@@ -30,6 +30,12 @@ class TimetableFilters extends Component
         $this->resetPage();
     }
 
+    public function resetFilters()
+    {
+        $this->reset(['day', 'teacher', 'subject', 'room']);
+        $this->resetPage();
+    }
+
     public function render(): View
     {
         $query = Timetable::with('teacherSubject.teacher', 'teacherSubject.subject');
