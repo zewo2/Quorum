@@ -12,7 +12,13 @@ class CourseController extends Controller
      */
     public function create()
     {
-        return view('dashboards.admin.courses.create');
+        $departments = Course::select('department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department')
+            ->filter();
+
+        return view('dashboards.admin.courses.create', compact('departments'));
     }
 
     /**
@@ -42,7 +48,13 @@ class CourseController extends Controller
      */
     public function edit(Course $course)
     {
-        return view('dashboards.admin.courses.edit', compact('course'));
+        $departments = Course::select('department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department')
+            ->filter();
+
+        return view('dashboards.admin.courses.edit', compact('course', 'departments'));
     }
 
     /**

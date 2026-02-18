@@ -62,13 +62,22 @@
     <div class="dashboard-card filters-card">
         <div class="filters-header">
             <h3>Course Filters</h3>
-            <a href="{{ route('dashboard.admin.courses.create') }}" class="btn btn-primary btn-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 5v14"></path>
-                    <path d="M5 12h14"></path>
-                </svg>
-                New Course
-            </a>
+            <div style="display: flex; gap: var(--spacing-md);">
+                <a href="{{ route('dashboard.admin.courses.create') }}" class="btn btn-primary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14"></path>
+                        <path d="M5 12h14"></path>
+                    </svg>
+                    New Course
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" data-action="new-department">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14"></path>
+                        <path d="M5 12h14"></path>
+                    </svg>
+                    New Department
+                </button>
+            </div>
         </div>
 
         <div class="filters-row">

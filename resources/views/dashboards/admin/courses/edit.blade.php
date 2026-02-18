@@ -86,16 +86,19 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="department">Department <span class="required">*</span></label>
-                        <input
-                            type="text"
+                        <select
                             id="department"
                             name="department"
-                            value="{{ old('department', $course->department) }}"
                             required
                             class="@error('department') is-invalid @enderror"
-                            placeholder="Computer Science"
-                            maxlength="100"
                         >
+                            <option value="">Select a department...</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept }}" {{ old('department', $course->department) === $dept ? 'selected' : '' }}>
+                                    {{ $dept }}
+                                </option>
+                            @endforeach
+                        </select>
                         @error('department')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
