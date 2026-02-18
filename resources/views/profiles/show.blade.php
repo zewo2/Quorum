@@ -23,7 +23,7 @@
             </div>
             <div class="profile-header-info" style="margin-top: 10px">
                 <h1 class="profile-name">{{ $user->name }}</h1>
-                <p class="profile-role">{{ ucfirst($user->role ?? 'Student') }}</p>
+                <p class="profile-role" style="margin-top: 10px">{{ ucfirst($user->role ?? 'Student') }}</p>
                 @if($user->email)
                     <p class="profile-email">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

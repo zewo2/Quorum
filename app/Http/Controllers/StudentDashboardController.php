@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Exam;
+use App\Models\Attendance;
 use App\Models\User;
 use App\Models\Timetable;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class StudentDashboardController extends Controller
@@ -15,8 +14,15 @@ class StudentDashboardController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $enrolledCourses = $user->enrollments()->with('course')->get();
+        $enrolledCourses = $user->enrollments()->with('course.subjects')->get();
         $courseCount = $enrolledCourses->count();
+
+        $enrolledClassesCount = $enrolledCourses
+            ->flatMap(function ($enrollment) {
+                return $enrollment->course?->subjects ?? collect();
+            })
+            ->unique('id')
+            ->count();
 
         $totalCredits = $enrolledCourses->sum(function ($enrollment) {
             return $enrollment->course->credits ?? 0;
@@ -34,6 +40,18 @@ class StudentDashboardController extends Controller
             : 0;
 
         $activeEnrollments = $enrolledCourses->filter(fn($e) => $e->status === 'active')->count();
+        $enrollmentIds = $enrolledCourses->pluck('id')->all();
+
+        $attendanceRecords = empty($enrollmentIds)
+            ? collect()
+            : Attendance::whereIn('enrollment_id', $enrollmentIds)->get();
+
+        $presentCount = $attendanceRecords->where('status', 'present')->count();
+        $lateCount = $attendanceRecords->where('status', 'late')->count();
+        $totalSessions = $attendanceRecords->count();
+        $attendanceRate = $totalSessions > 0
+            ? round((($presentCount + $lateCount) / $totalSessions) * 100, 1)
+            : 0;
 
         $courseIds = $enrolledCourses->pluck('course_id')->toArray();
         $todayDay = now()->format('l');
@@ -53,55 +71,38 @@ class StudentDashboardController extends Controller
 
         return view('dashboards.student.index', [
             'courseCount' => $courseCount,
+            'enrolledClassesCount' => $enrolledClassesCount,
             'totalCredits' => $totalCredits,
             'averageGrade' => $averageGrade,
             'gpa' => $gpa,
             'activeEnrollments' => $activeEnrollments,
+            'attendanceRate' => $attendanceRate,
+            'totalSessions' => $totalSessions,
             'enrolledCourses' => $enrolledCourses,
             'todaySchedule' => $todaySchedule
         ]);
     }
 
-    public function schedule(Request $request): \Illuminate\View\View
+    public function schedule(): \Illuminate\View\View
     {
-        /** @var User $user */
-        $user = Auth::user();
-
-        $statusFilter = $request->input('status', 'all');
-        $viewMode = $request->input('view', 'detailed');
-
-        $enrollmentsQuery = $user->enrollments()->with('course');
-        if ($statusFilter === 'active') {
-            $enrollmentsQuery->where('status', 'active');
-        }
-
-        $enrolledCourses = $enrollmentsQuery->get();
-        $courseIds = $enrolledCourses->pluck('course_id')->toArray();
-
-        $timetables = Timetable::with('teacherSubject.subject', 'teacherSubject.teacher')
-            ->whereHas('teacherSubject', function($query) use ($courseIds) {
-                $query->whereHas('subject', function ($subjectQuery) use ($courseIds) {
-                    $subjectQuery->whereHas('courses', function ($courseQuery) use ($courseIds) {
-                        $courseQuery->whereIn('courses.id', $courseIds);
-                    });
-                });
-            })
-            ->orderBy('day_of_week')
-            ->orderBy('start_time')
-            ->get();
-
-        return view('dashboards.student.schedule', [
-            'enrolledCourses' => $enrolledCourses,
-            'timetables' => $timetables,
-            'viewMode' => $viewMode,
-        ]);
+        return view('dashboards.student.schedule');
     }
 
     public function subjects(): \Illuminate\View\View
     {
         /** @var User $user */
         $user = Auth::user();
-        $enrolledCourses = $user->enrollments()->with('course')->get();
+        $enrolledCourses = $user->enrollments()->with('course.subjects')->get();
+
+        $currentEnrollment = $enrolledCourses->firstWhere('status', 'active') ?? $enrolledCourses->first();
+        $currentCourse = $currentEnrollment?->course;
+
+        $enrolledSubjects = $enrolledCourses
+            ->flatMap(function ($enrollment) {
+                return $enrollment->course?->subjects ?? collect();
+            })
+            ->unique('id')
+            ->values();
 
         $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
         $averageGrade = $enrollmentsWithGrades->count() > 0
@@ -116,6 +117,8 @@ class StudentDashboardController extends Controller
 
         return view('dashboards.student.subjects', [
             'enrolledCourses' => $enrolledCourses,
+            'enrolledSubjects' => $enrolledSubjects,
+            'currentCourse' => $currentCourse,
             'averageGrade' => $averageGrade,
             'gpa' => $gpa
         ]);
@@ -156,43 +159,95 @@ class StudentDashboardController extends Controller
         ]);
     }
 
+    public function assignments(): \Illuminate\View\View
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $enrolledCourses = $user->enrollments()->with('course.subjects')->get();
+
+        $enrolledSubjects = $enrolledCourses
+            ->flatMap(function ($enrollment) {
+                return $enrollment->course?->subjects ?? collect();
+            })
+            ->unique('id')
+            ->values();
+
+        return view('dashboards.student.assignments', [
+            'enrolledSubjects' => $enrolledSubjects,
+            'activeSubjectsCount' => $enrolledSubjects->where('status', 'active')->count(),
+            'totalAssignments' => 0,
+            'pendingAssignments' => 0,
+        ]);
+    }
+
+    public function attendance(): \Illuminate\View\View
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $enrollments = $user->enrollments()->with('course')->get();
+        $enrollmentIds = $enrollments->pluck('id')->all();
+
+        $attendanceRecords = empty($enrollmentIds)
+            ? collect()
+            : Attendance::with('enrollment.course', 'teacher')
+                ->whereIn('enrollment_id', $enrollmentIds)
+                ->orderByDesc('date')
+                ->orderByDesc('created_at')
+                ->get();
+
+        $presentCount = $attendanceRecords->where('status', 'present')->count();
+        $lateCount = $attendanceRecords->where('status', 'late')->count();
+        $absentCount = $attendanceRecords->where('status', 'absent')->count();
+        $totalSessions = $attendanceRecords->count();
+        $attendanceRate = $totalSessions > 0
+            ? round((($presentCount + $lateCount) / $totalSessions) * 100, 1)
+            : 0;
+
+        return view('dashboards.student.attendance', [
+            'attendanceRecords' => $attendanceRecords,
+            'presentCount' => $presentCount,
+            'lateCount' => $lateCount,
+            'absentCount' => $absentCount,
+            'totalSessions' => $totalSessions,
+            'attendanceRate' => $attendanceRate,
+        ]);
+    }
+
     public function exams(): \Illuminate\View\View
     {
         /** @var User $user */
         $user = Auth::user();
-        $enrolledCourses = $user->enrollments()->with('course')->get();
 
-        $courseIds = $enrolledCourses->pluck('course_id')->toArray();
-        $today = now()->startOfDay();
+        // Get enrolled subjects with all their exams
+        $enrolledSubjects = $user->enrollments()
+            ->with([
+                'course.subjects' => function ($query) {
+                    $query->with(['exams' => function ($examQuery) {
+                        $examQuery->orderBy('exam_date')->orderBy('start_time');
+                    }]);
+                }
+            ])
+            ->get()
+            ->pluck('course.subjects')
+            ->flatten()
+            ->unique('id')
+            ->values();
 
-        $exams = Exam::with('subject.course', 'subject.courses')
-            ->whereHas('subject', function($query) use ($courseIds) {
-                $query->whereHas('courses', function ($courseQuery) use ($courseIds) {
-                    $courseQuery->whereIn('courses.id', $courseIds);
-                });
+        // Extract upcoming exams from enrolled subjects
+        $upcomingExams = $enrolledSubjects
+            ->pluck('exams')
+            ->flatten()
+            ->where('exam_date', '>=', now()->toDateString())
+            ->sortBy(function ($exam) {
+                return $exam->exam_date->timestamp;
             })
-            ->orderBy('exam_date')
-            ->orderBy('start_time')
-            ->get();
-
-        $nextExamByCourse = $enrolledCourses->mapWithKeys(function ($enrollment) use ($exams, $today) {
-            $courseId = $enrollment->course_id;
-            $courseExams = $exams->filter(function ($exam) use ($courseId) {
-                $subjectCourseIds = $exam->subject?->courses?->pluck('id')->all() ?? [];
-
-                return in_array($courseId, $subjectCourseIds);
-            });
-
-            $selected = $courseExams->first(fn($exam) => $exam->exam_date->startOfDay()->gte($today))
-                ?? $courseExams->first();
-
-            return [$courseId => $selected];
-        });
+            ->values();
 
         return view('dashboards.student.exams', [
-            'enrolledCourses' => $enrolledCourses,
-            'nextExamByCourse' => $nextExamByCourse,
-            'today' => $today,
+            'enrolledSubjects' => $enrolledSubjects,
+            'upcomingExams' => $upcomingExams,
         ]);
     }
 }

@@ -9,43 +9,49 @@
         <div>
             <p class="stat-label">Current GPA</p>
             <p class="stat-value">{{ $gpa }}</p>
-            <span class="stat-meta">Based on enrolled courses</span>
+            <span class="stat-meta">Based on graded enrollments</span>
+        </div>
+        <div class="summary-course">
+            <p class="stat-label">Current Enrolled Course</p>
+            @if($currentCourse)
+                <p class="item-title">{{ $currentCourse->name }}</p>
+                <span class="item-sub">{{ $currentCourse->code ?? 'N/A' }} • {{ $currentCourse->department }} • {{ $currentCourse->total_years }} years</span>
+            @else
+                <p class="item-title">No active enrollment</p>
+                <span class="item-sub">Enroll in a course to see details</span>
+            @endif
         </div>
         <div class="badge badge-success">{{ $averageGrade }} / 20</div>
     </div>
 
     <div class="dashboard-card">
         <div class="card-header">
-            <h3>Enrolled Courses</h3>
+            <h3>Enrolled Subjects</h3>
             <a href="{{ route('dashboard.student.schedule') }}" class="card-link">View schedule →</a>
         </div>
 
         <div class="subjects-grid">
-            @forelse($enrolledCourses as $enrollment)
+            @forelse($enrolledSubjects as $subject)
                 <div class="subject-card">
                     <div class="card-top">
                         <div>
-                            <p class="eyebrow">{{ $enrollment->course->code ?? 'N/A' }}</p>
-                            <h4>{{ $enrollment->course->name }}</h4>
+                            <p class="eyebrow">{{ $subject->code ?? 'N/A' }}</p>
+                            <h4>{{ $subject->name }}</h4>
                         </div>
-                        @if($enrollment->grade)
-                            <span class="grade-chip" style="border-color: {{ $enrollment->grade >= 17 ? '#10b981' : '#0ea5e9' }}; color: {{ $enrollment->grade >= 17 ? '#10b981' : '#0ea5e9' }};">{{ $enrollment->grade }}/20</span>
-                        @else
-                            <span class="grade-chip" style="border-color: #94a3b8; color: #94a3b8;">No grade</span>
-                        @endif
+                        <span class="grade-chip" style="border-color: #0ea5e9; color: #0ea5e9;">Y{{ $subject->year }} • S{{ $subject->semester }}</span>
                     </div>
-                    <p class="card-sub">{{ $enrollment->course->department }}</p>
+                    <p class="card-sub">{{ \Illuminate\Support\Str::limit($subject->description ?? 'No description available.', 90) }}</p>
                     <div class="progress">
-                        <div class="progress-bar" style="width: {{ $enrollment->grade ? ($enrollment->grade / 20) * 100 : 0 }}%; background: {{ $enrollment->grade ? ($enrollment->grade >= 17 ? '#10b981' : '#0ea5e9') : '#9ca3af' }};"></div>
+                        <div class="progress-bar" style="width: 100%; background: {{ ($subject->status ?? 'active') === 'active' ? '#0ea5e9' : '#9ca3af' }};"></div>
                     </div>
                     <div class="progress-meta">
-                        <span>{{ $enrollment->status }}</span>
-                        <span style="color: var(--text-dark-secondary);">{{ $enrollment->course->credits }} credits</span>
+                        <span>{{ ucfirst($subject->status ?? 'active') }}</span>
+                        <span style="color: var(--text-dark-secondary);">{{ $subject->credits }} ECTS • Year {{ $subject->year }} • Semester {{ $subject->semester }}</span>
                     </div>
                 </div>
             @empty
                 <div style="grid-column: 1 / -1; padding: var(--spacing-lg); text-align: center; color: var(--text-dark-secondary);">
-                    No enrolled courses
+                    No enrolled subjects
                 </div>
             @endforelse
         </div>
@@ -54,31 +60,31 @@
     <div class="dashboard-grid detail-grid">
         <div class="dashboard-card">
             <div class="card-header">
-                <h3>Course Info</h3>
-                <span class="chip">{{ $enrolledCourses->count() }} courses</span>
+                <h3>Subject Info</h3>
+                <span class="chip">{{ $enrolledSubjects->count() }} subjects</span>
             </div>
-            <div class="list">
-                @forelse($enrolledCourses->take(3) as $enrollment)
+            <div class="list subject-info-list">
+                @forelse($enrolledSubjects as $subject)
                 <div class="list-row">
                     <div>
-                        <p class="item-title">{{ $enrollment->course->name }}</p>
-                        <span class="item-sub">{{ $enrollment->course->department }} • {{ $enrollment->status }}</span>
+                        <p class="item-title">{{ $subject->name }}</p>
+                        <span class="item-sub">{{ $subject->credits }} ECTS • Year {{ $subject->year }} • Semester {{ $subject->semester }}</span>
                     </div>
-                    @if($enrollment->grade)
-                        <span class="badge badge-success">{{ $enrollment->grade }}/20</span>
+                    @if(($subject->status ?? 'active') === 'active')
+                        <span class="badge badge-success">Active</span>
                     @else
-                        <span class="badge badge-secondary">No grade</span>
+                        <span class="badge badge-secondary">{{ ucfirst($subject->status ?? 'inactive') }}</span>
                     @endif
                 </div>
                 @empty
                 <div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
-                    No enrolled courses
+                    No enrolled subjects
                 </div>
                 @endforelse
             </div>
         </div>
 
-        <div class="dashboard-card">
+        <div class="dashboard-card" style="margin-top: 0.6cm">
             <div class="card-header">
                 <h3>Academic Summary</h3>
                 <a href="{{ route('dashboard.student.grades') }}" class="card-link">View details →</a>
@@ -87,8 +93,8 @@
                 <div class="resource-card">
                     <div class="resource-icon">📚</div>
                     <div>
-                        <p class="item-title">{{ $enrolledCourses->count() }}</p>
-                        <span class="item-sub">Enrolled courses</span>
+                        <p class="item-title">{{ $enrolledSubjects->count() }}</p>
+                        <span class="item-sub">Enrolled subjects</span>
                     </div>
                 </div>
                 <div class="resource-card">
@@ -114,6 +120,7 @@
 <style>
 .subjects-page { display: flex; flex-direction: column; gap: var(--spacing-lg); }
 .summary-card { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-dark); }
+.summary-course { min-width: 300px; }
 .stat-label { color: var(--text-dark-secondary); }
 .stat-value { font-size: 2rem; font-weight: 700; color: var(--text-dark); }
 .stat-meta { color: var(--text-dark-secondary); font-size: 0.9rem; }
@@ -130,6 +137,11 @@
 
 .detail-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .list { display: flex; flex-direction: column; gap: var(--spacing-md); }
+.subject-info-list { max-height: 340px; overflow-y: auto; padding-right: 4px; }
+.subject-info-list::-webkit-scrollbar { width: 8px; }
+.subject-info-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.04); border-radius: 999px; }
+.subject-info-list::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 999px; }
+.subject-info-list::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 .list-row { display: grid; grid-template-columns: 1fr auto; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md); background: rgba(255, 255, 255, 0.03); border-radius: var(--radius-md); }
 .item-title { color: var(--text-dark); font-weight: 600; }
 .item-sub { color: var(--text-dark-secondary); font-size: 0.9rem; }

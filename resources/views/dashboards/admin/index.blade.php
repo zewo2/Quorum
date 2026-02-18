@@ -31,7 +31,6 @@
 				<div class="stat-info">
 					<p class="stat-label">Total Users</p>
 					<h3 class="stat-value">{{ $totalUsers }}</h3>
-					<span class="stat-change positive">↑ 12% from last month</span>
 				</div>
 				<div class="stat-icon-wrapper stat-icon-primary">
 					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -49,7 +48,6 @@
 				<div class="stat-info">
 					<p class="stat-label">Active Courses</p>
 					<h3 class="stat-value">{{ $activeCourses }}</h3>
-					<span class="stat-change positive">↑ 5% from last month</span>
 				</div>
 				<div class="stat-icon-wrapper stat-icon-success">
 					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -65,7 +63,6 @@
 				<div class="stat-info">
 					<p class="stat-label">Enrollments</p>
 					<h3 class="stat-value">{{ $totalEnrollments }}</h3>
-					<span class="stat-change positive">↑ 8% from last month</span>
 				</div>
 				<div class="stat-icon-wrapper stat-icon-warning">
 					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -82,7 +79,6 @@
 				<div class="stat-info">
 					<p class="stat-label">Departments</p>
 					<h3 class="stat-value">{{ $departmentCount }}</h3>
-					<span class="stat-change neutral">No change</span>
 				</div>
 				<div class="stat-icon-wrapper stat-icon-danger">
 					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -148,7 +144,7 @@
 				</div>
 				<div class="action-card-content">
 					<h4>Manage Timetables</h4>
-					<p>Schedule and class assignments</p>
+					<p>Schedules for active classes</p>
 				</div>
 				<div class="action-card-arrow">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

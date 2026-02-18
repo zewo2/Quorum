@@ -183,6 +183,13 @@
                             </svg>
                             <span>Subjects</span>
                         </a>
+                        <a href="{{ route('dashboard.student.assignments') }}" class="nav-item {{ request()->routeIs('dashboard.student.assignments') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 11l3 3L22 4"></path>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                            <span>Assignments</span>
+                        </a>
                         <a href="{{ route('dashboard.student.grades') }}" class="nav-item {{ request()->routeIs('dashboard.student.grades') ? 'active' : '' }}" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -192,6 +199,16 @@
                                 <polyline points="10 9 9 9 8 9"></polyline>
                             </svg>
                             <span>Grades</span>
+                        </a>
+                        <a href="{{ route('dashboard.student.attendance') }}" class="nav-item {{ request()->routeIs('dashboard.student.attendance') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8 2v4"></path>
+                                <path d="M16 2v4"></path>
+                                <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+                                <path d="M3 10h18"></path>
+                                <path d="M9 16l2 2 4-4"></path>
+                            </svg>
+                            <span>Attendance</span>
                         </a>
                         <a href="{{ route('dashboard.student.exams') }}" class="nav-item {{ request()->routeIs('dashboard.student.exams') ? 'active' : '' }}" class="nav-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -239,18 +256,17 @@
                 </div>
 
                 <div class="header-right">
+                    {{--
                     <button class="icon-btn" title="Notifications">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
                     </button>
+                    --}}
 
                     <div class="user-profile-dropdown">
                         <button class="user-profile-btn" id="userDropdownBtn">
-                            <div class="user-avatar">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                            </div>
                             <div class="user-info">
                                 <span class="user-name">{{ auth()->user()->name ?? 'User' }}</span>
                                 <span class="user-role">{{ ucfirst(auth()->user()->role ?? 'student') }}</span>

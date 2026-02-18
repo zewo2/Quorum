@@ -68,7 +68,7 @@
 								<span class="assessment-meta">{{ $enrollment->course->department }}</span>
 							</div>
 							<div class="assessment-grade">
-								<span class="grade-value">{{ $enrollment->course->credits }}</span>
+								<span class="grade-value">{{ $enrollment->course->total_years }} years</span>
 							</div>
 						</div>
 					</div>
@@ -82,7 +82,7 @@
 	</div>
 
 	<div class="dashboard-grid detail-grid">
-		<div class="dashboard-card">
+		<div class="dashboard-card" style="margin-bottom: 0.6cm">
 			<div class="card-header">
 				<h3>Grade Statistics</h3>
 				<span class="chip">All Courses</span>

@@ -54,6 +54,35 @@
 		</div>
 	</div>
 
+	<div class="dashboard-card card-stat">
+		<div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+				<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+			</svg>
+		</div>
+		<div class="stat-content">
+			<h3>Enrolled Classes</h3>
+			<p class="stat-value">{{ $enrolledClassesCount }}</p>
+		</div>
+	</div>
+
+	<div class="dashboard-card card-stat">
+		<div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8);">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M8 2v4"></path>
+				<path d="M16 2v4"></path>
+				<rect width="18" height="18" x="3" y="4" rx="2"></rect>
+				<path d="M3 10h18"></path>
+				<path d="M9 16l2 2 4-4"></path>
+			</svg>
+		</div>
+		<div class="stat-content">
+			<h3>Attendance Rate</h3>
+			<p class="stat-value">{{ $attendanceRate }}%</p>
+		</div>
+	</div>
+
 	<div class="dashboard-card card-full">
 		<div class="card-header">
 			<h3>Recent Grades</h3>
@@ -87,7 +116,7 @@
 					<div class="schedule-details">
 						<h4>{{ $entry->teacherSubject?->subject?->name ?? 'Class' }}</h4>
 						<span class="schedule-room">
-							{{ $entry->start_time->format('H:i') }} - {{ $entry->end_time->format('H:i') }}
+							{{ substr((string) $entry->start_time, 0, 5) }} - {{ substr((string) $entry->end_time, 0, 5) }}
 							@if($entry->room)
 								• {{ $entry->room }}
 							@endif
@@ -136,41 +165,30 @@
 		</div>
 	</div>
 
-	<div class="dashboard-card card-actions">
-		<h3>Quick Actions</h3>
-		<div class="actions-grid">
-			<a href="{{ route('dashboard.student.subjects') }}" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-					<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-				</svg>
-				My Subjects
-			</a>
-			<a href="{{ route('dashboard.student.schedule') }}" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-					<line x1="16" y1="2" x2="16" y2="6"></line>
-					<line x1="8" y1="2" x2="8" y2="6"></line>
-					<line x1="3" y1="10" x2="21" y2="10"></line>
-				</svg>
-				View Schedule
-			</a>
-			<a href="{{ route('dashboard.student.grades') }}" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-					<polyline points="14 2 14 8 20 8"></polyline>
-				</svg>
-				View Grades
-			</a>
-			<a href="{{ route('dashboard.student.exams') }}" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-					<polyline points="14 2 14 8 20 8"></polyline>
-					<line x1="12" y1="18" x2="12" y2="12"></line>
-					<line x1="9" y1="15" x2="15" y2="15"></line>
-				</svg>
-				Exam Schedule
-			</a>
+	<div class="dashboard-card card-full">
+		<div class="card-header">
+			<h3>Assignments</h3>
+			<a href="{{ route('dashboard.student.assignments') }}" class="card-link">Open assignments →</a>
+		</div>
+		<div class="schedule-list">
+			<div class="schedule-item">
+				<div class="schedule-details">
+					<h4>Assignment tracking</h4>
+					<span class="schedule-room">No assignment records are currently available in the system.</span>
+				</div>
+				<div style="text-align: right;">
+					<a href="{{ route('dashboard.student.assignments') }}" class="card-link">Go to page →</a>
+				</div>
+			</div>
+			<div class="schedule-item">
+				<div class="schedule-details">
+					<h4>Attendance context</h4>
+					<span class="schedule-room">Current attendance rate is {{ $attendanceRate }}% over {{ $totalSessions }} sessions.</span>
+				</div>
+				<div style="text-align: right;">
+					<a href="{{ route('dashboard.student.attendance') }}" class="card-link">View attendance →</a>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
