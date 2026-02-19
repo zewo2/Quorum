@@ -39,9 +39,15 @@
                 <label class="field">
                     <span>Session</span>
                     <select name="session" onchange="updateFilters()">
-                        <option value="session_1" {{ $session === 'session_1' ? 'selected' : '' }}>Session 1</option>
-                        <option value="session_2" {{ $session === 'session_2' ? 'selected' : '' }}>Session 2</option>
-                        <option value="session_3" {{ $session === 'session_3' ? 'selected' : '' }}>Session 3</option>
+                        @if($availableSessions->isEmpty())
+                            <option value="" disabled selected>No sessions scheduled</option>
+                        @else
+                            @foreach($availableSessions as $sess)
+                                <option value="{{ $sess['key'] }}" {{ $session === $sess['key'] ? 'selected' : '' }}>
+                                    {{ $sess['display'] }}
+                                </option>
+                            @endforeach
+                        @endif
                     </select>
                 </label>
             </div>
@@ -77,14 +83,18 @@
                         <p class="card-sub">{{ $enrollments->count() }} students enrolled</p>
                     </div>
                     <div class="legend">
-                        <span class="badge badge-success">P</span>
-                        <span class="legend-label">Present</span>
-                        <br>
-                        <span class="badge badge-warning">L</span>
-                                    <td>{{ $enrollment->course?->name ?? 'General' }}</td>
-                        <br>
-                        <span class="badge badge-absent">A</span>
-                        <span class="legend-label">Absent</span>
+                        <div class="legend-item">
+                            <span class="badge badge-success">P</span>
+                            <span class="legend-label">Present</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="badge badge-warning">L</span>
+                            <span class="legend-label">Late</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="badge badge-absent">A</span>
+                            <span class="legend-label">Absent</span>
+                        </div>
                     </div>
                 </div>
 
@@ -177,7 +187,8 @@
 .stat-meta { color: var(--text-dark-secondary); font-size: 0.9rem; }
 
 .attendance-card .card-sub { color: var(--text-dark-secondary); margin-top: 4px; }
-.legend { display: grid; grid-template-columns: repeat(3, auto); gap: var(--spacing-sm); align-items: center; }
+.legend { display: flex; flex-direction: column; gap: var(--spacing-md); }
+.legend-item { display: flex; align-items: center; gap: 8px; }
 .legend-label { color: var(--text-dark-secondary); font-size: 0.9rem; }
 
 .table-wrapper { overflow-x: auto; }
@@ -202,7 +213,6 @@
 
 @media (max-width: 980px) {
     .header-card { flex-direction: column; align-items: stretch; }
-    .legend { grid-template-columns: repeat(2, auto); row-gap: var(--spacing-xs); }
 }
 </style>
 @endpush

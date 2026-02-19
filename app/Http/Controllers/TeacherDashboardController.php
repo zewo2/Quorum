@@ -70,16 +70,7 @@ class TeacherDashboardController extends Controller
      */
     public function classes(): View
     {
-        /** @var User $user */
-        $user = Auth::user();
-
-        $teacherSubjects = $user->subjectsTaught()
-            ->with('course.enrollments', 'courses.enrollments')
-            ->get();
-
-        return view('dashboards.teacher.classes', [
-            'teacherSubjects' => $teacherSubjects,
-        ]);
+        return view('dashboards.teacher.classes');
     }
 
     public function schedule(): View
@@ -113,14 +104,41 @@ class TeacherDashboardController extends Controller
         $user = Auth::user();
 
         $date = $request->input('date', now()->format('Y-m-d'));
-        $session = $request->input('session', 'session_1');
-
         $teacherSubjects = $user->subjectsTaught()
             ->with('course', 'courses')
             ->get();
 
         $subjectId = $request->input('subject', $teacherSubjects->first()?->id);
         $selectedSubject = $teacherSubjects->firstWhere('id', $subjectId);
+
+        // Get available sessions for the selected subject and date
+        $availableSessions = collect();
+        $dayOfWeek = '';
+        if ($selectedSubject) {
+            $dateObj = \Carbon\Carbon::createFromFormat('Y-m-d', $date);
+            $dayOfWeek = $dateObj->format('l'); // e.g., "Monday", "Tuesday"
+
+            $availableSessions = Timetable::whereHas('teacherSubject', function($query) use ($user, $selectedSubject) {
+                $query->where('teacher_id', $user->id)
+                      ->where('subject_id', $selectedSubject->id);
+            })
+                ->where('day_of_week', $dayOfWeek)
+                ->orderBy('start_time')
+                ->get()
+                ->map(function($timetable) {
+                    return [
+                        'key' => $timetable->start_time . '-' . $timetable->end_time,
+                        'display' => \DateTime::createFromFormat('H:i:s', $timetable->start_time)?->format('H:i') . ' - ' .
+                                    \DateTime::createFromFormat('H:i:s', $timetable->end_time)?->format('H:i'),
+                    ];
+                });
+        }
+
+        // Use first available session or provided one
+        $session = $request->input('session');
+        if (!$session && $availableSessions->isNotEmpty()) {
+            $session = $availableSessions->first()['key'];
+        }
 
         $enrollments = collect();
         if ($selectedSubject) {
@@ -155,6 +173,7 @@ class TeacherDashboardController extends Controller
             'enrollments' => $enrollments,
             'date' => $date,
             'session' => $session,
+            'availableSessions' => $availableSessions,
             'presentCount' => $presentCount,
             'lateCount' => $lateCount,
             'absentCount' => $absentCount,

@@ -2,6 +2,10 @@
 
 @section('title', 'Quorum - Campus Management System')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('chatbot/n8n-chat-widget.css') }}">
+@endpush
+
 @section('content')
 <section class="hero">
     <div class="hero-background"></div>
@@ -243,3 +247,17 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('chatbot/scripts.js') }}"></script>
+    <script
+        src="{{ asset('chatbot/n8n-chat-widget.js') }}"
+        defer
+        data-endpoint="http://localhost:5678/webhook/a9a7e16f-c23e-412a-9c8f-546523bfbab2"
+        data-title="Quorium - AI Assistant"
+        data-welcome="Hello! I'm Quorum's virtual assistant. How can I help you today?"
+        data-placeholder="Type your message..."
+        data-position="bottom-right"
+    ></script>
+@endpush
+

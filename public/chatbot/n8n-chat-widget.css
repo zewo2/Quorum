@@ -1,0 +1,44 @@
+
+/* n8n-chat-widget.css – estilos básicos do widget genérico */
+#n8n-chat-toggle{
+  position:fixed; right:20px; bottom:20px; width:64px; height:64px;
+  border:none; border-radius:50%; font-size:28px; cursor:pointer;
+  background: var(--n8n-accent, linear-gradient(135deg,#010DAC,#29B0E6,#930CF1,#D865FF));
+  color:#fff; box-shadow:0 4px 12px rgba(0,0,0,.3); z-index:9999;
+}
+#n8n-chat-toggle.n8n-left{ left:20px; right:auto; }
+
+#n8n-chat-container{
+  position:fixed; right:20px; bottom:20px; width:360px; max-height:70vh;
+  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.15); display:none; flex-direction:column; z-index:10000;
+}
+#n8n-chat-container.n8n-left{ left:20px; right:auto; }
+
+#n8n-chat-header{
+  padding:12px 14px; color:#fff; font-weight:600; display:flex; align-items:center; justify-content:space-between;
+  border-radius:12px 12px 0 0;
+  background: var(--n8n-accent, linear-gradient(135deg,#010DAC,#29B0E6,#930CF1,#D865FF));
+}
+#n8n-chat-header button{ background:none; border:none; color:#fff; font-size:22px; cursor:pointer; }
+
+#n8n-chat-messages{ flex:1; padding:12px; overflow:auto; display:flex; flex-direction:column; gap:10px; font:14px/1.5 Inter,system-ui,Arial; }
+
+.n8n-msg{ padding:10px 12px; border-radius:8px; max-width:85%; }
+.n8n-bot{ background:#f8f9fa; align-self:flex-start; }
+.n8n-user{ background:#f5f8ff; align-self:flex-end; text-align:right; }
+
+#n8n-chat-inputbar{ display:flex; gap:8px; padding:10px; border-top:1px solid #e5e7eb; }
+#n8n-chat-input{ flex:1; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; }
+#n8n-chat-send{ padding:0 14px; border:none; border-radius:8px; background:#111827; color:#fff; cursor:pointer; }
+
+.n8n-chat-link{ color:#0a66c2; text-decoration:none; word-break:break-all; }
+.n8n-chat-link:hover{ text-decoration:underline; }
+
+.n8n-time, .n8n-meta{ margin-top:6px; color:#374151; font-size:13px; }
+
+/* Mobile fullscreen */
+@media (max-width:768px){
+  #n8n-chat-container.n8n-mobile{ top:0; left:0; right:0; bottom:0; width:100%; max-height:none; border-radius:0; }
+  #n8n-chat-header{ border-radius:0; }
+}
