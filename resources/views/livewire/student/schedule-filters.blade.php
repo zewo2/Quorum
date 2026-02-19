@@ -40,8 +40,8 @@
                         <span style="background: {{ $enrollment->status === 'active' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(107, 114, 128, 0.12)' }}; color: {{ $enrollment->status === 'active' ? '#10b981' : '#6b7280' }}; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">{{ ucfirst($enrollment->status) }}</span>
                     </div>
                     <div class="cell" style="text-align: right;">
-                        @if($enrollment->grade)
-                            <strong>{{ $enrollment->grade }}/20</strong>
+                        @if($enrollment->final_grade)
+                            <strong>{{ $enrollment->final_grade }}/20</strong>
                         @else
                             <span style="color: var(--text-dark-secondary);">Pending</span>
                         @endif

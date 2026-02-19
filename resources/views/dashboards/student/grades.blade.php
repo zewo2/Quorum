@@ -36,8 +36,8 @@
 							<h4>{{ $enrollment->course->name }}</h4>
 							<span class="course-code">{{ $enrollment->course->code ?? 'N/A' }}</span>
 						</div>
-						@if($enrollment->grade)
-							<span class="grade-badge">{{ $enrollment->grade }}/20</span>
+					@if($enrollment->final_grade)
+						<span class="grade-badge">{{ $enrollment->final_grade }}/20</span>
 						@else
 							<span class="grade-badge" style="background: #6b7280;">No Grade</span>
 						@endif
@@ -49,10 +49,10 @@
 								<span class="assessment-meta">Status: {{ $enrollment->status }}</span>
 							</div>
 							<div class="assessment-grade">
-								@if($enrollment->grade)
-									<span class="grade-value">{{ $enrollment->grade }}/20</span>
-									<div class="grade-bar">
-										<div class="grade-fill" style="width: {{ ($enrollment->grade / 20) * 100 }}%;"></div>
+							@if($enrollment->final_grade)
+								<span class="grade-value">{{ $enrollment->final_grade }}/20</span>
+								<div class="grade-bar">
+									<div class="grade-fill" style="width: {{ ($enrollment->final_grade / 20) * 100 }}%;"></div>
 									</div>
 								@else
 									<span class="grade-value" style="color: #9ca3af;">Pending</span>
@@ -119,13 +119,13 @@
 			<div class="upcoming-list">
 				@forelse($enrolledCourses as $enrollment)
 				<div class="upcoming-item">
-					<div class="pending-dot" style="background: {{ $enrollment->grade ? ($enrollment->grade >= 17 ? '#10b981' : '#0ea5e9') : '#9ca3af' }};"></div>
+					<div class="pending-dot" style="background: {{ $enrollment->final_grade ? ($enrollment->final_grade >= 17 ? '#10b981' : '#0ea5e9') : '#9ca3af' }};"></div>
 					<div>
 						<p class="item-title">{{ $enrollment->course->name }}</p>
 						<span class="item-sub">{{ $enrollment->course->code ?? 'N/A' }} • {{ $enrollment->course->department }}</span>
 					</div>
-					@if($enrollment->grade)
-						<span class="badge badge-success">{{ $enrollment->grade }}/20</span>
+					@if($enrollment->final_grade)
+						<span class="badge badge-success">{{ $enrollment->final_grade }}/20</span>
 					@else
 						<span class="badge badge-secondary">Pending</span>
 					@endif

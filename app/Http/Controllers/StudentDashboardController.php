@@ -28,14 +28,14 @@ class StudentDashboardController extends Controller
             return $enrollment->course->credits ?? 0;
         });
 
-        $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
+        $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->final_grade !== null);
         $averageGrade = $enrollmentsWithGrades->count() > 0
-            ? round($enrollmentsWithGrades->avg('grade'), 2)
+            ? round($enrollmentsWithGrades->avg('final_grade'), 2)
             : 0;
 
         $gpa = $enrollmentsWithGrades->count() > 0
             ? round($enrollmentsWithGrades->avg(function ($enrollment) {
-                return ($enrollment->grade / 20) * 4.0;
+                return ($enrollment->final_grade / 20) * 4.0;
             }), 2)
             : 0;
 
@@ -104,14 +104,14 @@ class StudentDashboardController extends Controller
             ->unique('id')
             ->values();
 
-        $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
+        $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->final_grade !== null);
         $averageGrade = $enrollmentsWithGrades->count() > 0
-            ? round($enrollmentsWithGrades->avg('grade'), 2)
+            ? round($enrollmentsWithGrades->avg('final_grade'), 2)
             : 0;
 
         $gpa = $enrollmentsWithGrades->count() > 0
             ? round($enrollmentsWithGrades->avg(function ($enrollment) {
-                return ($enrollment->grade / 20) * 4.0;
+                return ($enrollment->final_grade / 20) * 4.0;
             }), 2)
             : 0;
 
@@ -130,24 +130,24 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
         $enrolledCourses = $user->enrollments()->with('course')->get();
 
-        $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->grade !== null);
+        $enrollmentsWithGrades = $enrolledCourses->filter(fn($e) => $e->final_grade !== null);
 
         $averageGrade = $enrollmentsWithGrades->count() > 0
-            ? round($enrollmentsWithGrades->avg('grade'), 2)
+            ? round($enrollmentsWithGrades->avg('final_grade'), 2)
             : 0;
 
         $gpa = $enrollmentsWithGrades->count() > 0
             ? round($enrollmentsWithGrades->avg(function ($enrollment) {
-                return ($enrollment->grade / 20) * 4.0;
+                return ($enrollment->final_grade / 20) * 4.0;
             }), 2)
             : 0;
 
         $highestGrade = $enrollmentsWithGrades->count() > 0
-            ? $enrollmentsWithGrades->max('grade')
+            ? $enrollmentsWithGrades->max('final_grade')
             : 0;
 
         $lowestGrade = $enrollmentsWithGrades->count() > 0
-            ? $enrollmentsWithGrades->min('grade')
+            ? $enrollmentsWithGrades->min('final_grade')
             : 0;
 
         return view('dashboards.student.grades', [

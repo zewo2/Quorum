@@ -103,14 +103,14 @@
                     </div>
                 </div>
 
-                @if($enrollment->grade)
+                @if($enrollment->final_grade)
                     <div class="result-section">
                         <div class="result-header">
                             <span>Grade</span>
-                            <span class="grade-badge">{{ $enrollment->grade }}/20</span>
+                            <span class="grade-badge">{{ $enrollment->final_grade }}/20</span>
                         </div>
                         <div class="result-bar">
-                            <div class="result-fill" style="width: {{ ($enrollment->grade / 20) * 100 }}%;"></div>
+                            <div class="result-fill" style="width: {{ ($enrollment->final_grade / 20) * 100 }}%;"></div>
                         </div>
                     </div>
                 @else
@@ -128,7 +128,7 @@
 
                 <div class="card-footer-exam">
                     <a href="{{ route('dashboard.student.subjects') }}" class="btn btn-secondary btn-small">Details</a>
-                    @if($enrollment->grade)
+                    @if($enrollment->final_grade)
                         <span class="btn btn-secondary btn-small" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none; cursor: default;">Graded</span>
                     @else
                         <span class="btn btn-secondary btn-small" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: none; cursor: default;">Pending</span>
@@ -156,17 +156,17 @@
             </div>
             <div class="stat-box">
                 <p class="stat-label">Graded</p>
-                <p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->grade !== null)->count() }}</p>
+                <p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->final_grade !== null)->count() }}</p>
                 <span class="stat-meta">With grades</span>
             </div>
             <div class="stat-box">
                 <p class="stat-label">Pending</p>
-                <p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->grade === null)->count() }}</p>
+                <p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->final_grade === null)->count() }}</p>
                 <span class="stat-meta">Awaiting grades</span>
             </div>
             <div class="stat-box">
                 <p class="stat-label">Average</p>
-                <p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->grade !== null)->count() > 0 ? round($enrolledCourses->filter(fn($e) => $e->grade !== null)->avg('grade'), 1) : 'N/A' }}</p>
+                <p class="stat-value">{{ $enrolledCourses->filter(fn($e) => $e->final_grade !== null)->count() > 0 ? round($enrolledCourses->filter(fn($e) => $e->final_grade !== null)->avg('final_grade'), 1) : 'N/A' }}</p>
                 <span class="stat-meta">Out of 20</span>
             </div>
         </div>

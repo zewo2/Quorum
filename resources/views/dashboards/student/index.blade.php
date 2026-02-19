@@ -89,13 +89,13 @@
 			<a href="{{ route('dashboard.student.grades') }}" class="card-link">View all →</a>
 		</div>
 		<div class="grades-list">
-			@forelse($enrolledCourses->filter(fn($e) => $e->grade !== null)->take(3) as $enrollment)
+			@forelse($enrolledCourses->filter(fn($e) => $e->final_grade !== null)->take(3) as $enrollment)
 			<div class="grade-item">
 				<div class="grade-info">
 					<h4>{{ $enrollment->course->name }}</h4>
 					<span class="grade-date">{{ $enrollment->created_at->format('F d, Y') }}</span>
 				</div>
-				<div class="grade-value {{ $enrollment->grade >= 17 ? 'grade-excellent' : 'grade-good' }}">{{ $enrollment->grade }}</div>
+				<div class="grade-value {{ $enrollment->final_grade >= 17 ? 'grade-excellent' : 'grade-good' }}">{{ $enrollment->final_grade }}</div>
 			</div>
 			@empty
 			<div style="padding: var(--spacing-md); color: var(--text-dark-secondary); text-align: center;">
@@ -150,8 +150,8 @@
 					<span class="schedule-room">{{ $enrollment->course->department }} • {{ $enrollment->status }}</span>
 				</div>
 				<div style="text-align: right;">
-					@if($enrollment->grade)
-						<div class="grade-value {{ $enrollment->grade >= 17 ? 'grade-excellent' : 'grade-good' }}" style="margin: 0;">{{ $enrollment->grade }}</div>
+					@if($enrollment->final_grade)
+						<div class="grade-value {{ $enrollment->final_grade >= 17 ? 'grade-excellent' : 'grade-good' }}" style="margin: 0;">{{ $enrollment->final_grade }}</div>
 					@else
 						<span style="color: var(--text-dark-secondary); font-size: 0.875rem;">No grade yet</span>
 					@endif

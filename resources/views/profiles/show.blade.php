@@ -155,8 +155,8 @@
                                     <p class="course-meta">{{ $enrollment->course->department }} • {{ $enrollment->course->credits }} credits</p>
                                 </div>
                                 <div class="course-grade">
-                                    @if($enrollment->grade)
-                                        <span class="grade-badge {{ $enrollment->grade >= 17 ? 'grade-excellent' : 'grade-good' }}">{{ $enrollment->grade }}/20</span>
+                                    @if($enrollment->final_grade)
+                                        <span class="grade-badge {{ $enrollment->final_grade >= 17 ? 'grade-excellent' : 'grade-good' }}">{{ $enrollment->final_grade }}/20</span>
                                     @else
                                         <span class="grade-badge grade-pending">No grade</span>
                                     @endif
