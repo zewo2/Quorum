@@ -292,6 +292,11 @@
     min-width: 760px;
 }
 
+.calendar-grid {
+    --slot-height: 105px;
+    --header-height: 52px;
+}
+
 .time-column, .day-column {
     display: flex;
     flex-direction: column;
@@ -314,6 +319,13 @@
     text-align: center;
     color: var(--text-dark);
     border-bottom: 2px solid var(--border-dark);
+    min-height: var(--header-height);
+    height: var(--header-height);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 .day-name {
@@ -337,7 +349,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 52px;
+    min-height: var(--slot-height);
+    height: var(--slot-height);
+    box-sizing: border-box;
     border-bottom: 1px solid var(--border-dark);
     border-right: 1px solid var(--border-dark);
 }
@@ -345,13 +359,15 @@
 .schedule-cell {
     background: var(--bg-dark-secondary);
     padding: 4px;
-    min-height: 52px;
+    min-height: var(--slot-height);
+    height: var(--slot-height);
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 4px;
     border-bottom: 1px solid var(--border-dark);
     overflow-y: auto;
-    max-height: 110px;
+    max-height: var(--slot-height);
 }
 
 .schedule-event {
