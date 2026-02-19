@@ -103,18 +103,31 @@
                 $weekDates = $weekDates ?? collect();
                 $hasData = $entryCount > 0;
 
-                // Group timetables by date and time
+                // Group timetables by date and occupied hourly slot
                 $scheduleByDateTime = [];
                 foreach($groupedByDate as $dateKey => $dateEntries) {
-                    // Normalize the date key to YYYY-MM-DD format
                     $normalizedKey = \Carbon\Carbon::parse($dateKey)->toDateString();
                     $scheduleByDateTime[$normalizedKey] = [];
+
                     foreach($dateEntries as $entry) {
-                        $startTime = substr($entry->start_time, 0, 5); // e.g., "11:00" from "11:00:00"
-                        if (!isset($scheduleByDateTime[$normalizedKey][$startTime])) {
-                            $scheduleByDateTime[$normalizedKey][$startTime] = [];
+                        $startTime = \Carbon\Carbon::parse($entry->start_time);
+                        $endTime = \Carbon\Carbon::parse($entry->end_time);
+                        $slotCursor = $startTime->copy();
+
+                        while ($slotCursor->lt($endTime)) {
+                            $slotKey = $slotCursor->format('H:i');
+
+                            if (!isset($scheduleByDateTime[$normalizedKey][$slotKey])) {
+                                $scheduleByDateTime[$normalizedKey][$slotKey] = [];
+                            }
+
+                            $scheduleByDateTime[$normalizedKey][$slotKey][] = [
+                                'entry' => $entry,
+                                'is_start' => $slotCursor->equalTo($startTime),
+                            ];
+
+                            $slotCursor->addHour();
                         }
-                        $scheduleByDateTime[$normalizedKey][$startTime][] = $entry;
                     }
                 }
             @endphp
@@ -146,38 +159,49 @@
                             @foreach($timeSlots as $time => $label)
                                 <div class="schedule-cell">
                                     @if(isset($scheduleByDateTime[$dateString][$time]))
-                                        @foreach($scheduleByDateTime[$dateString][$time] as $entry)
-                                            <div class="schedule-event">
-                                                <div class="event-header">
-                                                    <strong class="event-subject">{{ $entry->teacherSubject?->subject?->name ?? 'N/A' }}</strong>
-                                                    <div class="event-actions">
-                                                        <a href="{{ route('dashboard.admin.timetables.edit', $entry) }}" class="event-action-btn" title="Edit">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                            </svg>
-                                                        </a>
-                                                        <form action="{{ route('dashboard.admin.timetables.destroy', $entry) }}" method="POST" style="display: inline; margin: 0;">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="event-action-btn event-action-btn-danger" title="Delete" onclick="return confirm('Delete this entry?')">
+                                        @foreach($scheduleByDateTime[$dateString][$time] as $slotData)
+                                            @php
+                                                $entry = $slotData['entry'];
+                                                $isStart = $slotData['is_start'];
+                                            @endphp
+
+                                            <div class="schedule-event {{ $isStart ? '' : 'schedule-event-continuation' }}">
+                                                @if($isStart)
+                                                    <div class="event-header">
+                                                        <strong class="event-subject">{{ $entry->teacherSubject?->subject?->name ?? 'N/A' }}</strong>
+                                                        <div class="event-actions">
+                                                            <a href="{{ route('dashboard.admin.timetables.edit', $entry) }}" class="event-action-btn" title="Edit">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                                                 </svg>
-                                                            </button>
-                                                        </form>
+                                                            </a>
+                                                            <form action="{{ route('dashboard.admin.timetables.destroy', $entry) }}" method="POST" style="display: inline; margin: 0;">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="event-action-btn event-action-btn-danger" title="Delete" onclick="return confirm('Delete this entry?')">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="event-details">
-                                                    <div class="event-info">
-                                                        <span class="event-teacher">{{ $entry->teacherSubject?->teacher?->name ?? 'N/A' }}</span>
-                                                        <span class="event-room">{{ $entry->room ?? 'Room TBD' }} {{ $entry->building ? '(' . $entry->building . ')' : '' }}</span>
+                                                    <div class="event-details">
+                                                        <div class="event-info">
+                                                            <span class="event-teacher">{{ $entry->teacherSubject?->teacher?->name ?? 'N/A' }}</span>
+                                                            <span class="event-room">{{ $entry->room ?? 'Room TBD' }} {{ $entry->building ? '(' . $entry->building . ')' : '' }}</span>
+                                                        </div>
+                                                        @if($entry->capacity)
+                                                            <span class="event-capacity">Cap: {{ $entry->capacity }}</span>
+                                                        @endif
                                                     </div>
-                                                    @if($entry->capacity)
-                                                        <span class="event-capacity">Cap: {{ $entry->capacity }}</span>
-                                                    @endif
-                                                </div>
+                                                @else
+                                                    <div class="continuation-fill">
+                                                        <span class="continuation-subject">{{ $entry->teacherSubject?->subject?->name ?? 'N/A' }}</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endforeach
                                     @endif
@@ -385,6 +409,34 @@
 .schedule-event:hover {
     background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.15));
     transform: translateY(-1px);
+}
+
+.schedule-event-continuation {
+    border-top: 1px dashed rgba(79, 70, 229, 0.35);
+    opacity: 0.9;
+    padding: 0;
+    gap: 0;
+    flex: 1;
+    min-height: 100%;
+}
+
+.continuation-fill {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 4px 6px;
+    box-sizing: border-box;
+}
+
+.continuation-subject {
+    font-size: 0.68rem;
+    color: var(--text-dark);
+    font-weight: 600;
+    line-height: 1.2;
+    opacity: 0.95;
 }
 
 .event-header {

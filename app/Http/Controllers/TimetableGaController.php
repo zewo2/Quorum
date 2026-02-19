@@ -199,29 +199,41 @@ class TimetableGaController extends Controller
 
         foreach ($existing as $timetable) {
             $teacherId = $timetable->teacherSubject?->teacher_id;
-            $startKey = $this->normalizeTime($timetable->start_time);
+            $timeKeys = $this->expandTimeKeys($timetable->start_time, $timetable->end_time);
             $courseIds = $this->extractCourseIdsFromTeacherSubject($timetable->teacherSubject);
 
             if ($timetable->class_date) {
                 $dateKey = $this->normalizeDate($timetable->class_date);
                 if ($teacherId) {
-                    $teacherDateSlots[$teacherId][$dateKey][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $teacherDateSlots[$teacherId][$dateKey][$timeKey] = true;
+                    }
                 }
                 foreach ($courseIds as $courseId) {
-                    $courseDateSlots[$courseId][$dateKey][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $courseDateSlots[$courseId][$dateKey][$timeKey] = true;
+                    }
                 }
                 if ($timetable->room) {
-                    $roomDateSlots[$timetable->room][$dateKey][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $roomDateSlots[$timetable->room][$dateKey][$timeKey] = true;
+                    }
                 }
             } else {
                 if ($teacherId) {
-                    $teacherWeeklySlots[$teacherId][$timetable->day_of_week][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $teacherWeeklySlots[$teacherId][$timetable->day_of_week][$timeKey] = true;
+                    }
                 }
                 foreach ($courseIds as $courseId) {
-                    $courseWeeklySlots[$courseId][$timetable->day_of_week][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $courseWeeklySlots[$courseId][$timetable->day_of_week][$timeKey] = true;
+                    }
                 }
                 if ($timetable->room) {
-                    $roomWeeklySlots[$timetable->room][$timetable->day_of_week][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $roomWeeklySlots[$timetable->room][$timetable->day_of_week][$timeKey] = true;
+                    }
                 }
             }
         }
@@ -252,7 +264,7 @@ class TimetableGaController extends Controller
 
             $teacherId = $teacherSubjects[$teacherSubjectId]?->teacher_id;
             $courseIds = $this->extractCourseIdsFromTeacherSubject($teacherSubjects[$teacherSubjectId]);
-            $entryStart = $this->normalizeTime($entry['start_time']);
+            $entryTimeKeys = $this->expandTimeKeys($entry['start_time'], $entry['end_time']);
             $entryDate = $this->normalizeDate($entry['class_date']);
             $entryDay = Carbon::parse($entryDate)->format('l');
             $duration = $this->durationHours($entry['start_time'], $entry['end_time']);
@@ -262,18 +274,26 @@ class TimetableGaController extends Controller
                 continue;
             }
 
-            $roomConflict = ($roomDateSlots[$entry['room']][$entryDate][$entryStart] ?? false)
-                || ($roomWeeklySlots[$entry['room']][$entryDay][$entryStart] ?? false);
+            $roomConflict = false;
+            foreach ($entryTimeKeys as $timeKey) {
+                $roomConflict = $roomConflict
+                    || ($roomDateSlots[$entry['room']][$entryDate][$timeKey] ?? false)
+                    || ($roomWeeklySlots[$entry['room']][$entryDay][$timeKey] ?? false);
+            }
             $teacherConflict = $teacherId
-                ? (($teacherDateSlots[$teacherId][$entryDate][$entryStart] ?? false)
-                    || ($teacherWeeklySlots[$teacherId][$entryDay][$entryStart] ?? false))
+                ? collect($entryTimeKeys)->contains(function ($timeKey) use ($teacherDateSlots, $teacherWeeklySlots, $teacherId, $entryDate, $entryDay) {
+                    return ($teacherDateSlots[$teacherId][$entryDate][$timeKey] ?? false)
+                        || ($teacherWeeklySlots[$teacherId][$entryDay][$timeKey] ?? false);
+                })
                 : false;
 
             $courseConflict = false;
             foreach ($courseIds as $courseId) {
-                $courseConflict = $courseConflict
-                    || ($courseDateSlots[$courseId][$entryDate][$entryStart] ?? false)
-                    || ($courseWeeklySlots[$courseId][$entryDay][$entryStart] ?? false);
+                foreach ($entryTimeKeys as $timeKey) {
+                    $courseConflict = $courseConflict
+                        || ($courseDateSlots[$courseId][$entryDate][$timeKey] ?? false)
+                        || ($courseWeeklySlots[$courseId][$entryDay][$timeKey] ?? false);
+                }
             }
 
             if ($roomConflict || $teacherConflict || $courseConflict) {
@@ -303,12 +323,18 @@ class TimetableGaController extends Controller
                 'capacity' => $room?->capacity,
             ]);
 
-            $roomDateSlots[$entry['room']][$entryDate][$entryStart] = true;
+            foreach ($entryTimeKeys as $timeKey) {
+                $roomDateSlots[$entry['room']][$entryDate][$timeKey] = true;
+            }
             if ($teacherId) {
-                $teacherDateSlots[$teacherId][$entryDate][$entryStart] = true;
+                foreach ($entryTimeKeys as $timeKey) {
+                    $teacherDateSlots[$teacherId][$entryDate][$timeKey] = true;
+                }
             }
             foreach ($courseIds as $courseId) {
-                $courseDateSlots[$courseId][$entryDate][$entryStart] = true;
+                foreach ($entryTimeKeys as $timeKey) {
+                    $courseDateSlots[$courseId][$entryDate][$timeKey] = true;
+                }
             }
 
             $remainingHours[$teacherSubjectId] = max(0, ($remainingHours[$teacherSubjectId] ?? 0) - $duration);
@@ -388,6 +414,25 @@ class TimetableGaController extends Controller
         $end = Carbon::parse($this->normalizeTime($endTime));
 
         return max(0, (int) round($start->diffInMinutes($end) / 60));
+    }
+
+    private function expandTimeKeys($startTime, $endTime): array
+    {
+        $start = Carbon::parse($this->normalizeTime($startTime));
+        $end = Carbon::parse($this->normalizeTime($endTime));
+
+        if ($end->lte($start)) {
+            return [$start->format('H:i')];
+        }
+
+        $keys = [];
+        $cursor = $start->copy();
+        while ($cursor->lt($end)) {
+            $keys[] = $cursor->format('H:i');
+            $cursor->addHour();
+        }
+
+        return $keys;
     }
 
     private function normalizeDate($value): string

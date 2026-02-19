@@ -60,11 +60,11 @@ class TimetableGaService
         $population = $this->seedPopulation($sessionGenes, $candidateDates, $rooms);
 
         for ($generation = 0; $generation < $this->generations; $generation++) {
-            $scored = $this->scorePopulation($population, $sessionGenes, $teacherSubjects, $rooms, $existingTimetables);
+            $scored = $this->scorePopulation($population, $sessionGenes, $teacherSubjects, $rooms, $existingTimetables, $candidateDates);
             $population = $this->nextGeneration($scored, $sessionGenes, $candidateDates, $rooms);
         }
 
-        $finalScores = $this->scorePopulation($population, $sessionGenes, $teacherSubjects, $rooms, $existingTimetables);
+        $finalScores = $this->scorePopulation($population, $sessionGenes, $teacherSubjects, $rooms, $existingTimetables, $candidateDates);
         usort($finalScores, fn ($a, $b) => $a['fitness'] <=> $b['fitness']);
 
         $best = $finalScores[0]['schedule'] ?? [];
@@ -159,12 +159,12 @@ class TimetableGaService
         return $schedule;
     }
 
-    private function scorePopulation(array $population, array $sessionGenes, Collection $teacherSubjects, Collection $rooms, Collection $existingTimetables): array
+    private function scorePopulation(array $population, array $sessionGenes, Collection $teacherSubjects, Collection $rooms, Collection $existingTimetables, array $candidateDates): array
     {
         $scored = [];
 
         foreach ($population as $schedule) {
-            $fitness = $this->calculateFitness($schedule, $sessionGenes, $teacherSubjects, $rooms, $existingTimetables);
+            $fitness = $this->calculateFitness($schedule, $sessionGenes, $teacherSubjects, $rooms, $existingTimetables, $candidateDates);
             $scored[] = [
                 'schedule' => $schedule,
                 'fitness' => $fitness,
@@ -174,7 +174,7 @@ class TimetableGaService
         return $scored;
     }
 
-    private function calculateFitness(array $schedule, array $sessionGenes, Collection $teacherSubjects, Collection $rooms, Collection $existingTimetables): float
+    private function calculateFitness(array $schedule, array $sessionGenes, Collection $teacherSubjects, Collection $rooms, Collection $existingTimetables, array $candidateDates): float
     {
         $penalty = 0.0;
 
@@ -186,32 +186,49 @@ class TimetableGaService
         $courseWeeklySlots = [];
         $weeklyHours = [];
 
+        foreach ($candidateDates as $candidateDate) {
+            $weekKey = Carbon::parse($candidateDate)->format('o-W');
+            $weeklyHours[$weekKey] = 0;
+        }
+
         foreach ($existingTimetables as $timetable) {
             $teacherId = $timetable->teacherSubject?->teacher_id;
             $courseIds = $this->extractCourseIdsFromTeacherSubject($timetable->teacherSubject);
-            $startKey = $this->normalizeTime($timetable->start_time);
+            $timeKeys = $this->expandTimeKeys($timetable->start_time, $timetable->end_time);
 
             if ($timetable->class_date) {
                 $dateKey = $this->normalizeDate($timetable->class_date);
                 if ($teacherId) {
-                    $teacherDateSlots[$teacherId][$dateKey][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $teacherDateSlots[$teacherId][$dateKey][$timeKey] = true;
+                    }
                 }
                 foreach ($courseIds as $courseId) {
-                    $courseDateSlots[$courseId][$dateKey][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $courseDateSlots[$courseId][$dateKey][$timeKey] = true;
+                    }
                 }
                 if ($timetable->room) {
-                    $roomDateSlots[$timetable->room][$dateKey][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $roomDateSlots[$timetable->room][$dateKey][$timeKey] = true;
+                    }
                 }
             } else {
                 $weekday = $timetable->day_of_week;
                 if ($teacherId) {
-                    $teacherWeeklySlots[$teacherId][$weekday][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $teacherWeeklySlots[$teacherId][$weekday][$timeKey] = true;
+                    }
                 }
                 foreach ($courseIds as $courseId) {
-                    $courseWeeklySlots[$courseId][$weekday][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $courseWeeklySlots[$courseId][$weekday][$timeKey] = true;
+                    }
                 }
                 if ($timetable->room) {
-                    $roomWeeklySlots[$timetable->room][$weekday][$startKey] = true;
+                    foreach ($timeKeys as $timeKey) {
+                        $roomWeeklySlots[$timetable->room][$weekday][$timeKey] = true;
+                    }
                 }
             }
         }
@@ -224,7 +241,7 @@ class TimetableGaService
                 ->map(fn ($id) => (int) $id)
                 ->values()
                 ->all();
-            $entryStart = $this->normalizeTime($entry['start_time']);
+            $entryTimeKeys = $this->expandTimeKeys($entry['start_time'], $entry['end_time']);
             $entryDate = $this->normalizeDate($entry['class_date']);
             $entryDay = $entry['day_of_week'];
             $entryDuration = $this->durationHours($entry['start_time'], $entry['end_time']);
@@ -237,16 +254,24 @@ class TimetableGaService
                 continue;
             }
 
-            $roomConflict = ($roomDateSlots[$entry['room']][$entryDate][$entryStart] ?? false)
-                || ($roomWeeklySlots[$entry['room']][$entryDay][$entryStart] ?? false);
+            $roomConflict = false;
+            foreach ($entryTimeKeys as $timeKey) {
+                $roomConflict = $roomConflict
+                    || ($roomDateSlots[$entry['room']][$entryDate][$timeKey] ?? false)
+                    || ($roomWeeklySlots[$entry['room']][$entryDay][$timeKey] ?? false);
+            }
             if ($roomConflict) {
                 $penalty += 1000000;
                 continue;
             }
 
             if ($teacherId) {
-                $teacherConflict = ($teacherDateSlots[$teacherId][$entryDate][$entryStart] ?? false)
-                    || ($teacherWeeklySlots[$teacherId][$entryDay][$entryStart] ?? false);
+                $teacherConflict = false;
+                foreach ($entryTimeKeys as $timeKey) {
+                    $teacherConflict = $teacherConflict
+                        || ($teacherDateSlots[$teacherId][$entryDate][$timeKey] ?? false)
+                        || ($teacherWeeklySlots[$teacherId][$entryDay][$timeKey] ?? false);
+                }
                 if ($teacherConflict) {
                     $penalty += 1000000;
                     continue;
@@ -255,8 +280,12 @@ class TimetableGaService
 
             // Hard rule: same course cohort cannot have two classes at the same time slot.
             foreach ($courseIds as $courseId) {
-                $courseConflict = ($courseDateSlots[$courseId][$entryDate][$entryStart] ?? false)
-                    || ($courseWeeklySlots[$courseId][$entryDay][$entryStart] ?? false);
+                $courseConflict = false;
+                foreach ($entryTimeKeys as $timeKey) {
+                    $courseConflict = $courseConflict
+                        || ($courseDateSlots[$courseId][$entryDate][$timeKey] ?? false)
+                        || ($courseWeeklySlots[$courseId][$entryDay][$timeKey] ?? false);
+                }
 
                 if ($courseConflict) {
                     $penalty += 1000000;
@@ -264,12 +293,18 @@ class TimetableGaService
                 }
             }
 
-            $roomDateSlots[$entry['room']][$entryDate][$entryStart] = true;
+            foreach ($entryTimeKeys as $timeKey) {
+                $roomDateSlots[$entry['room']][$entryDate][$timeKey] = true;
+            }
             if ($teacherId) {
-                $teacherDateSlots[$teacherId][$entryDate][$entryStart] = true;
+                foreach ($entryTimeKeys as $timeKey) {
+                    $teacherDateSlots[$teacherId][$entryDate][$timeKey] = true;
+                }
             }
             foreach ($courseIds as $courseId) {
-                $courseDateSlots[$courseId][$entryDate][$entryStart] = true;
+                foreach ($entryTimeKeys as $timeKey) {
+                    $courseDateSlots[$courseId][$entryDate][$timeKey] = true;
+                }
             }
 
             $room = $rooms->firstWhere('code', $entry['room']);
@@ -436,5 +471,24 @@ class TimetableGaService
         $end = Carbon::parse($this->normalizeTime($endTime));
 
         return max(0, (int) round($start->diffInMinutes($end) / 60));
+    }
+
+    private function expandTimeKeys($startTime, $endTime): array
+    {
+        $start = Carbon::parse($this->normalizeTime($startTime));
+        $end = Carbon::parse($this->normalizeTime($endTime));
+
+        if ($end->lte($start)) {
+            return [$start->format('H:i')];
+        }
+
+        $keys = [];
+        $cursor = $start->copy();
+        while ($cursor->lt($end)) {
+            $keys[] = $cursor->format('H:i');
+            $cursor->addHour();
+        }
+
+        return $keys;
     }
 }
