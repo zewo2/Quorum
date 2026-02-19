@@ -159,28 +159,6 @@ class StudentDashboardController extends Controller
         ]);
     }
 
-    public function assignments(): \Illuminate\View\View
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        $enrolledCourses = $user->enrollments()->with('course.subjects')->get();
-
-        $enrolledSubjects = $enrolledCourses
-            ->flatMap(function ($enrollment) {
-                return $enrollment->course?->subjects ?? collect();
-            })
-            ->unique('id')
-            ->values();
-
-        return view('dashboards.student.assignments', [
-            'enrolledSubjects' => $enrolledSubjects,
-            'activeSubjectsCount' => $enrolledSubjects->where('status', 'active')->count(),
-            'totalAssignments' => 0,
-            'pendingAssignments' => 0,
-        ]);
-    }
-
     public function attendance(): \Illuminate\View\View
     {
         /** @var User $user */

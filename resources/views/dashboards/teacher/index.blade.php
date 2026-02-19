@@ -61,7 +61,7 @@
 			@forelse($todaySchedule as $entry)
 				<div class="schedule-item">
 					<div class="schedule-time">
-						{{ $entry->start_time->format('H:i') }} - {{ $entry->end_time->format('H:i') }}
+						{{ \DateTime::createFromFormat('H:i:s', $entry->start_time)?->format('H:i') ?? $entry->start_time }} - {{ \DateTime::createFromFormat('H:i:s', $entry->end_time)?->format('H:i') ?? $entry->end_time }}
 					</div>
 					<div class="schedule-details">
 						<h4>{{ $entry->teacherSubject?->subject?->name ?? 'Class' }}</h4>
@@ -82,98 +82,6 @@
 					</div>
 				</div>
 			@endforelse
-		</div>
-	</div>
-
-	<div class="dashboard-card card-half">
-		<div class="card-header">
-			<h3>My Classes</h3>
-			<a href="{{ route('dashboard.teacher.classes') }}" class="card-link">View all →</a>
-		</div>
-		<div class="classes-list">
-			@forelse($teacherSubjects as $subject)
-				@php
-					$subjectCourses = $subject->courses;
-					$courseNames = $subjectCourses->pluck('name')->join(', ');
-					$subjectStudents = $subjectCourses->sum(fn($course) => $course->enrollments->count());
-				@endphp
-				<div class="class-item">
-					<div class="class-info">
-						<h4>{{ $subject->name }}</h4>
-						<span class="class-meta">{{ $courseNames ?: 'General' }} • {{ $subjectStudents }} students</span>
-					</div>
-				</div>
-			@empty
-				<div class="class-item">
-					<p style="color: var(--text-dark-secondary); margin: 0;">No classes assigned</p>
-				</div>
-			@endforelse
-		</div>
-	</div>
-
-	<div class="dashboard-card card-half">
-		<div class="card-header">
-			<h3>Pending Tasks</h3>
-		</div>
-		<div class="tasks-list">
-			<div class="task-item">
-				<div class="task-icon">📝</div>
-				<div class="task-content">
-					<p><strong>Grade Assignment #3</strong></p>
-					<span class="task-meta">Web Development • 28 submissions</span>
-				</div>
-			</div>
-			<div class="task-item">
-				<div class="task-icon">📊</div>
-				<div class="task-content">
-					<p><strong>Submit Final Grades</strong></p>
-					<span class="task-meta">Database Systems • Due Jan 15</span>
-				</div>
-			</div>
-			<div class="task-item">
-				<div class="task-icon">📋</div>
-				<div class="task-content">
-					<p><strong>Attendance Report</strong></p>
-					<span class="task-meta">All classes • Due Jan 10</span>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div class="dashboard-card card-actions">
-		<h3>Quick Actions</h3>
-		<div class="actions-grid">
-			<a href="{{ route('dashboard.teacher.classes') }}" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-					<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-				</svg>
-				My Classes
-			</a>
-			<a href="{{ route('dashboard.teacher.attendance') }}" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-					<circle cx="8.5" cy="7" r="4"></circle>
-					<polyline points="17 11 19 13 23 9"></polyline>
-				</svg>
-				Attendance
-			</a>
-			<a href="#" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-					<polyline points="14 2 14 8 20 8"></polyline>
-				</svg>
-				Grade Assignments
-			</a>
-			<a href="#" class="action-btn">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-					<line x1="16" y1="2" x2="16" y2="6"></line>
-					<line x1="8" y1="2" x2="8" y2="6"></line>
-					<line x1="3" y1="10" x2="21" y2="10"></line>
-				</svg>
-				Schedule
-			</a>
 		</div>
 	</div>
 </div>

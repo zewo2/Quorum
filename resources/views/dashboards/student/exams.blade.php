@@ -28,7 +28,7 @@
                 <div class="exam-info">
                     <div class="exam-subject">{{ $exam->subject->name }}</div>
                     <div class="exam-meta">
-                        📅 {{ $exam->exam_date->format('M d, Y') }} at {{ $exam->start_time->format('H:i') }}
+                        📅 {{ $exam->exam_date->format('M d, Y') }} at {{ \DateTime::createFromFormat('H:i:s', $exam->start_time)?->format('H:i') ?? $exam->start_time }}
                         @if($exam->room)
                         • 📍 {{ $exam->room }}
                         @endif
@@ -85,7 +85,7 @@
                     <div class="subject-exam-item">
                         <div style="flex: 1;">
                             <div class="exam-date">{{ $exam->exam_date->format('M d, Y') }}</div>
-                            <div class="exam-time">{{ $exam->start_time->format('H:i') }} - {{ $exam->end_time->format('H:i') }}</div>
+                            <div class="exam-time">{{ \DateTime::createFromFormat('H:i:s', $exam->start_time)?->format('H:i') ?? $exam->start_time }} - {{ \DateTime::createFromFormat('H:i:s', $exam->end_time)?->format('H:i') ?? $exam->end_time }}</div>
                             @if($exam->room)
                             <div class="exam-room">Room: {{ $exam->room }}</div>
                             @endif

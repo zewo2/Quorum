@@ -72,7 +72,7 @@
                 <div class="field-group">
                     <label class="field">
                         <span>Start Time <span class="required">*</span></span>
-                        <input type="time" name="start_time" value="{{ isset($timetable) ? $timetable->start_time->format('H:i') : '' }}" required>
+                        <input type="time" name="start_time" value="{{ isset($timetable) ? (\DateTime::createFromFormat('H:i:s', $timetable->start_time)?->format('H:i') ?? $timetable->start_time) : '' }}" required>
                         @error('start_time')
                             <span class="error">{{ $message }}</span>
                         @enderror
@@ -82,7 +82,7 @@
                 <div class="field-group">
                     <label class="field">
                         <span>End Time <span class="required">*</span></span>
-                        <input type="time" name="end_time" value="{{ isset($timetable) ? $timetable->end_time->format('H:i') : '' }}" required>
+                        <input type="time" name="end_time" value="{{ isset($timetable) ? (\DateTime::createFromFormat('H:i:s', $timetable->end_time)?->format('H:i') ?? $timetable->end_time) : '' }}" required>
                         @error('end_time')
                             <span class="error">{{ $message }}</span>
                         @enderror

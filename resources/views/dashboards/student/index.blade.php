@@ -167,22 +167,7 @@
 
 	<div class="dashboard-card card-full">
 		<div class="card-header">
-			<h3>Assignments</h3>
-			<a href="{{ route('dashboard.student.assignments') }}" class="card-link">Open assignments →</a>
-		</div>
-		<div class="schedule-list">
-			<div class="schedule-item">
-				<div class="schedule-details">
-					<h4>Assignment tracking</h4>
-					<span class="schedule-room">No assignment records are currently available in the system.</span>
-				</div>
-				<div style="text-align: right;">
-					<a href="{{ route('dashboard.student.assignments') }}" class="card-link">Go to page →</a>
-				</div>
-			</div>
-			<div class="schedule-item">
-				<div class="schedule-details">
-					<h4>Attendance context</h4>
+			<h3>Attendance context</h3>
 					<span class="schedule-room">Current attendance rate is {{ $attendanceRate }}% over {{ $totalSessions }} sessions.</span>
 				</div>
 				<div style="text-align: right;">

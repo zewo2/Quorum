@@ -28,8 +28,8 @@
                                 @forelse($groupedByDay->get($day, []) as $timetable)
                                     <div class="schedule-slot">
                                         <div class="slot-time">
-                                            {{ $timetable->start_time->format('H:i') }}
-                                            <span class="slot-duration">- {{ $timetable->end_time->format('H:i') }}</span>
+                                            {{ \DateTime::createFromFormat('H:i:s', $timetable->start_time)?->format('H:i') ?? $timetable->start_time }}
+                                            <span class="slot-duration">- {{ \DateTime::createFromFormat('H:i:s', $timetable->end_time)?->format('H:i') ?? $timetable->end_time }}</span>
                                         </div>
                                         <div class="slot-details">
                                             <p class="slot-subject">{{ $timetable->teacherSubject?->subject?->name }}</p>
@@ -57,45 +57,6 @@
             @endif
         </div>
     </div>
-
-    @if($timetables->isNotEmpty())
-        <div class="dashboard-card" style="margin-top: var(--spacing-lg);">
-            <div class="card-header">
-                <h3>All Classes</h3>
-            </div>
-
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Day</th>
-                            <th>Time</th>
-                            <th>Room</th>
-                            <th>Building</th>
-                            <th>Capacity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($timetables as $entry)
-                            <tr>
-                                <td><strong>{{ $entry->teacherSubject?->subject?->name }}</strong></td>
-                                <td>{{ $entry->day_of_week }}</td>
-                                <td>
-                                    <span class="badge">
-                                        {{ $entry->start_time->format('H:i') }} - {{ $entry->end_time->format('H:i') }}
-                                    </span>
-                                </td>
-                                <td>{{ $entry->room ?? '-' }}</td>
-                                <td>{{ $entry->building ?? '-' }}</td>
-                                <td>{{ $entry->capacity ?? '-' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    @endif
 </div>
 
 <style>

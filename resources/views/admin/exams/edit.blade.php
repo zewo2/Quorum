@@ -59,14 +59,14 @@
                 <div class="field-group">
                     <label class="field">
                         <span>Start Time <span class="required">*</span></span>
-                        <input type="time" name="start_time" value="{{ $exam->start_time->format('H:i') }}" required>
+                        <input type="time" name="start_time" value="{{ \DateTime::createFromFormat('H:i:s', $exam->start_time)?->format('H:i') ?? $exam->start_time }}" required>
                     </label>
                 </div>
 
                 <div class="field-group">
                     <label class="field">
                         <span>End Time <span class="required">*</span></span>
-                        <input type="time" name="end_time" value="{{ $exam->end_time->format('H:i') }}" required>
+                        <input type="time" name="end_time" value="{{ \DateTime::createFromFormat('H:i:s', $exam->end_time)?->format('H:i') ?? $exam->end_time }}" required>
                     </label>
                 </div>
 

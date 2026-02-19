@@ -71,7 +71,6 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
         Route::resource('student', StudentDashboardController::class)->only(['index'])->names('student');
         Route::get('/student/schedule', [StudentDashboardController::class, 'schedule'])->name('student.schedule');
         Route::get('/student/subjects', [StudentDashboardController::class, 'subjects'])->name('student.subjects');
-        Route::get('/student/assignments', [StudentDashboardController::class, 'assignments'])->name('student.assignments');
         Route::get('/student/attendance', [StudentDashboardController::class, 'attendance'])->name('student.attendance');
         Route::get('/student/grades', [StudentDashboardController::class, 'grades'])->name('student.grades');
         Route::get('/student/exams', [StudentDashboardController::class, 'exams'])->name('student.exams');
