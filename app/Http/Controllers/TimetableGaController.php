@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateTimetableGaJob;
 use App\Models\Course;
+use App\Models\GaRun;
 use App\Models\Room;
 use App\Models\TeacherSubject;
 use App\Models\Timetable;
-use App\Services\TimetableGaService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -26,8 +28,20 @@ class TimetableGaController extends Controller
 
     public function index(Request $request): View
     {
-        $preview = $request->session()->get('ga.timetables', []);
-        $stats = $request->session()->get('ga.stats', []);
+        $preview = [];
+        $stats = [];
+
+        $currentRunId = $request->session()->get('ga.current_run_id');
+        $gaRun = $currentRunId ? GaRun::find($currentRunId) : null;
+
+        if ($gaRun && $gaRun->status === 'completed') {
+            $preview = $gaRun->result_payload['preview'] ?? [];
+            $stats = $gaRun->result_payload['stats'] ?? [];
+        } else {
+            $preview = $request->session()->get('ga.timetables', []);
+            $stats = $request->session()->get('ga.stats', []);
+        }
+
         $selectedCourseIds = $request->session()->get('ga.selected_course_ids', []);
         $selectedTeacherSubjectIds = $request->session()->get('ga.selected_teacher_subject_ids', []);
         $selectedMonth = $request->session()->get('ga.selected_month', now()->format('Y-m'));
@@ -53,6 +67,7 @@ class TimetableGaController extends Controller
             'selectedTeacherSubjectIds',
             'selectedMonth',
             'selectedMode',
+            'gaRun',
             'selectedYear',
             'selectedSemester'
         ));
@@ -71,93 +86,25 @@ class TimetableGaController extends Controller
             'selected_teacher_subject_ids.*' => ['integer', 'exists:teacher_subjects,id'],
         ]);
 
-        $teacherSubjects = TeacherSubject::with('teacher', 'subject.course', 'subject.courses')
-            ->where('status', 'active')
-            ->whereHas('subject', function ($query) use ($validated) {
-                $query->whereHas('courses', function ($courseQuery) use ($validated) {
-                    $courseQuery->whereIn('courses.id', $validated['selected_course_ids']);
-                });
-
-                if (!empty($validated['selected_year'])) {
-                    $query->where('year', (int) $validated['selected_year']);
-                }
-
-                if (!empty($validated['selected_semester'])) {
-                    $query->where('semester', (int) $validated['selected_semester']);
-                }
-            })
-            ->get();
-
-        if (!empty($validated['selected_teacher_subject_ids'])) {
-            $teacherSubjects = $teacherSubjects->whereIn('id', $validated['selected_teacher_subject_ids'])->values();
-        }
-
-        $hoursMeta = $this->buildHoursMeta($teacherSubjects);
-        $remainingHours = collect($hoursMeta)->pluck('remaining_hours', 'teacher_subject_id')->all();
-
-        $targets = $teacherSubjects->filter(function ($teacherSubject) use ($remainingHours) {
-            return ($remainingHours[$teacherSubject->id] ?? 0) > 0;
-        })->values();
-
-        if ($targets->isEmpty()) {
-            return redirect()->route('dashboard.admin.timetables.ga')
-                ->withErrors(['ga' => 'No selectable classes found. Selected classes may have already reached their legal hour cap.']);
-        }
-
-        $monthStart = Carbon::createFromFormat('Y-m', $validated['month'])->startOfMonth();
-        $monthEnd = Carbon::createFromFormat('Y-m', $validated['month'])->endOfMonth();
-
-        $existing = Timetable::with('teacherSubject')->get();
-        $rooms = Room::orderBy('capacity')->get();
-        $service = new TimetableGaService($this->days, $this->slots);
-        $schedule = $service->generateMonthly(
-            $targets,
-            $rooms,
-            $existing,
-            $monthStart,
-            $monthEnd,
-            $remainingHours,
-            ['mode' => $validated['mode']]
-        );
-
-        $preview = [];
-        foreach ($schedule as $entry) {
-            $teacherSubject = $targets->firstWhere('id', $entry['teacher_subject_id']);
-            $room = $rooms->firstWhere('code', $entry['room']);
-            $maxHours = $this->creditsToMaxHours((int) ($teacherSubject?->subject?->credits ?? 0));
-            $scheduledHours = $hoursMeta[$entry['teacher_subject_id']]['scheduled_hours'] ?? 0;
-            $remaining = $hoursMeta[$entry['teacher_subject_id']]['remaining_hours'] ?? 0;
-
-            $preview[] = [
-                'teacher_subject_id' => $entry['teacher_subject_id'],
-                'course' => $teacherSubject?->subject?->courses?->pluck('name')?->join(', ')
-                    ?: ($teacherSubject?->subject?->course?->name ?? 'N/A'),
-                'teacher' => $teacherSubject?->teacher?->name ?? 'N/A',
-                'subject' => $teacherSubject?->subject?->name ?? 'N/A',
-                'class_date' => $entry['class_date'],
-                'day_of_week' => $entry['day_of_week'],
-                'start_time' => $entry['start_time'],
-                'end_time' => $entry['end_time'],
-                'room' => $entry['room'],
-                'building' => $room?->building,
-                'capacity' => $room?->capacity,
-                'required' => $teacherSubject?->class_capacity,
-                'max_hours' => $maxHours,
-                'already_scheduled_hours' => $scheduledHours,
-                'remaining_hours_before' => $remaining,
-            ];
-        }
-
-        $request->session()->put('ga.timetables', $preview);
-        $request->session()->put('ga.stats', [
-            'generated' => count($preview),
-            'classes_selected' => $targets->count(),
-            'courses_selected' => count($validated['selected_course_ids']),
-            'month' => $validated['month'],
-            'mode' => $validated['mode'],
-            'year' => $validated['selected_year'] ?? null,
-            'semester' => $validated['selected_semester'] ?? null,
+        $gaRun = GaRun::create([
+            'user_id' => $request->user()?->id,
+            'status' => 'queued',
+            'progress' => 0,
+            'input_payload' => [
+                'month' => $validated['month'],
+                'mode' => $validated['mode'],
+                'selected_course_ids' => $validated['selected_course_ids'],
+                'selected_year' => $validated['selected_year'] ?? null,
+                'selected_semester' => $validated['selected_semester'] ?? null,
+                'selected_teacher_subject_ids' => $validated['selected_teacher_subject_ids'] ?? [],
+            ],
         ]);
+
+        GenerateTimetableGaJob::dispatch($gaRun->id)->onQueue('default');
+
+        $request->session()->forget('ga.timetables');
+        $request->session()->forget('ga.stats');
+        $request->session()->put('ga.current_run_id', $gaRun->id);
         $request->session()->put('ga.selected_course_ids', $validated['selected_course_ids']);
         $request->session()->put('ga.selected_teacher_subject_ids', $validated['selected_teacher_subject_ids'] ?? []);
         $request->session()->put('ga.selected_month', $validated['month']);
@@ -166,12 +113,46 @@ class TimetableGaController extends Controller
         $request->session()->put('ga.selected_semester', $validated['selected_semester'] ?? null);
 
         return redirect()->route('dashboard.admin.timetables.ga')
-            ->with('success', 'Schedule generated. Review and apply when ready.');
+            ->with('success', 'Schedule generation queued. Please wait while we process your request.');
+    }
+
+    public function status(Request $request): JsonResponse
+    {
+        $currentRunId = $request->session()->get('ga.current_run_id');
+        if (!$currentRunId) {
+            return response()->json([
+                'status' => 'idle',
+                'progress' => 0,
+            ]);
+        }
+
+        $gaRun = GaRun::find($currentRunId);
+        if (!$gaRun) {
+            return response()->json([
+                'status' => 'idle',
+                'progress' => 0,
+            ]);
+        }
+
+        return response()->json([
+            'status' => $gaRun->status,
+            'progress' => (int) $gaRun->progress,
+            'error_message' => $gaRun->error_message,
+            'generated' => count($gaRun->result_payload['preview'] ?? []),
+            'run_id' => $gaRun->id,
+        ]);
     }
 
     public function apply(Request $request): RedirectResponse
     {
         $preview = $request->session()->get('ga.timetables', []);
+        $currentRunId = $request->session()->get('ga.current_run_id');
+        if ($currentRunId) {
+            $gaRun = GaRun::find($currentRunId);
+            if ($gaRun && $gaRun->status === 'completed') {
+                $preview = $gaRun->result_payload['preview'] ?? [];
+            }
+        }
 
         if (empty($preview)) {
             return redirect()->route('dashboard.admin.timetables.ga')

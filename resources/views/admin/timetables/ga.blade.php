@@ -29,6 +29,16 @@
         </div>
     @endif
 
+    @if(($gaRun?->status ?? null) === 'running' || ($gaRun?->status ?? null) === 'queued')
+        <div class="alert alert-success" id="gaRunStatusAlert" style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); color: #bfdbfe;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+            </svg>
+            <span id="gaRunStatusText">Generation is {{ $gaRun->status }}... {{ (int) $gaRun->progress }}%</span>
+        </div>
+    @endif
+
     <div class="page-header">
         <div>
             <h1>Genetic Algorithm Scheduler</h1>
@@ -196,7 +206,14 @@
                     <small style="color: var(--text-dark-secondary);">Classes with no remaining legal hours are disabled.</small>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Generate Schedule</button>
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="gaGenerateButton"
+                    {{ (($gaRun?->status ?? null) === 'running' || ($gaRun?->status ?? null) === 'queued') ? 'disabled' : '' }}
+                >
+                    {{ (($gaRun?->status ?? null) === 'running' || ($gaRun?->status ?? null) === 'queued') ? 'Generation in progress...' : 'Generate Schedule' }}
+                </button>
             </form>
         </div>
     </div>
@@ -387,6 +404,10 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const gaRunStatus = @json($gaRun->status ?? null);
+        const gaStatusUrl = @json(route('dashboard.admin.timetables.ga.status'));
+        const gaRunStatusText = document.getElementById('gaRunStatusText');
+
         const courseDropdown = document.getElementById('gaCourseDropdown');
         const courseDropdownLabel = document.getElementById('gaCourseDropdownLabel');
         const classDropdownLabel = document.getElementById('gaClassDropdownLabel');
@@ -462,6 +483,44 @@
         });
 
         applyCourseFilter();
+
+        if (gaRunStatus === 'queued' || gaRunStatus === 'running') {
+            const pollStatus = () => {
+                fetch(gaStatusUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (gaRunStatusText && (data.status === 'queued' || data.status === 'running')) {
+                            gaRunStatusText.textContent = `Generation is ${data.status}... ${data.progress}%`;
+                        }
+
+                        if (data.status === 'completed') {
+                            window.location.reload();
+                            return;
+                        }
+
+                        if (data.status === 'failed') {
+                            const message = data.error_message || 'Generation failed. Please try again.';
+                            if (gaRunStatusText) {
+                                gaRunStatusText.textContent = message;
+                            }
+                            return;
+                        }
+
+                        setTimeout(pollStatus, 2500);
+                    })
+                    .catch(() => {
+                        setTimeout(pollStatus, 4000);
+                    });
+            };
+
+            setTimeout(pollStatus, 1200);
+        }
     });
 </script>
 @endpush

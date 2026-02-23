@@ -52,6 +52,7 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
                 ->parameters(['teacher-subjects' => 'teacherSubject']);
             Route::get('timetables/ga', [TimetableGaController::class, 'index'])->name('timetables.ga');
             Route::post('timetables/ga/generate', [TimetableGaController::class, 'generate'])->name('timetables.ga.generate');
+            Route::get('timetables/ga/status', [TimetableGaController::class, 'status'])->name('timetables.ga.status');
             Route::post('timetables/ga/apply', [TimetableGaController::class, 'apply'])->name('timetables.ga.apply');
             Route::resource('timetables', TimetableController::class)->parameters(['timetables' => 'timetable']);
             Route::resource('exams', ExamController::class)->parameters(['exams' => 'exam']);
