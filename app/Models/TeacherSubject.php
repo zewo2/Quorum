@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class TeacherSubject extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'teacher_id',
+        'subject_id',
+        'academic_year',
+        'semester',
+        'class_capacity',
+        'status',
+    ];
+
+    protected $casts = [
+        'class_capacity' => 'integer',
+        'academic_year' => 'integer',
+        'semester' => 'integer',
+    ];
+
+    public function teacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class);
+    }
+
+    public function timetables()
+    {
+        return $this->hasMany(Timetable::class);
+    }
+}
