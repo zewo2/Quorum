@@ -214,7 +214,3 @@ For production, ensure:
 2. `php artisan config:cache` and `php artisan route:cache` are used after deployment
 3. Node assets are built with `npm run build`
 4. Environment variables for DB, mail, and queue are correctly configured
-
-## License
-
-This project is developed for academic and institutional use. It may not be used for any commercial means.
